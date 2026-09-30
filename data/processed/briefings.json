@@ -1,0 +1,546 @@
+{
+  "BR001": {
+    "facts": {
+      "branch_id": "BR001",
+      "district": "Balasore",
+      "urgent_count": 16,
+      "watch_count": 33,
+      "top_villages": [
+        {
+          "village_id": "V0004",
+          "subdivision": "Baleshwar",
+          "urgent_count": 3
+        },
+        {
+          "village_id": "V0007",
+          "subdivision": "Baleshwar",
+          "urgent_count": 3
+        },
+        {
+          "village_id": "V0003",
+          "subdivision": "Baleshwar",
+          "urgent_count": 2
+        }
+      ],
+      "top_villages_urgent_total": 8,
+      "top_reasons": [
+        {
+          "reason": "High/medium exposure to the cyclone track",
+          "borrower_count": 16
+        },
+        {
+          "reason": "Already missed EMIs before the event",
+          "borrower_count": 16
+        },
+        {
+          "reason": "Livelihood highly sensitive to the hazard",
+          "borrower_count": 15
+        }
+      ],
+      "exposed_outstanding_inr": 5162685.0,
+      "exposed_outstanding_million_inr": 5.16
+    },
+    "text": "Call or visit first the 16 urgent borrowers, especially those already missing EMIs and with high exposure to the cyclone track.  \nPrioritize the three villages with the most urgent cases: V0004, V0007 and V0003 in Baleshwar subdivision.  \nWhen you reach a borrower, confirm they are safe and their family is unharmed.  \nCheck the extent of livelihood or asset damage and whether they can travel to the branch or need assistance.  \nRecord any immediate cash or material needs to inform relief planning.",
+    "source": "llm"
+  },
+  "BR002": {
+    "facts": {
+      "branch_id": "BR002",
+      "district": "Balasore",
+      "urgent_count": 14,
+      "watch_count": 68,
+      "top_villages": [
+        {
+          "village_id": "V0012",
+          "subdivision": "Nilagiri",
+          "urgent_count": 4
+        },
+        {
+          "village_id": "V0015",
+          "subdivision": "Nilagiri",
+          "urgent_count": 3
+        },
+        {
+          "village_id": "V0016",
+          "subdivision": "Nilagiri",
+          "urgent_count": 2
+        }
+      ],
+      "top_villages_urgent_total": 9,
+      "top_reasons": [
+        {
+          "reason": "High/medium exposure to the cyclone track",
+          "borrower_count": 14
+        },
+        {
+          "reason": "Already missed EMIs before the event",
+          "borrower_count": 14
+        },
+        {
+          "reason": "Livelihood highly sensitive to the hazard",
+          "borrower_count": 13
+        }
+      ],
+      "exposed_outstanding_inr": 6055057.0,
+      "exposed_outstanding_million_inr": 6.06
+    },
+    "text": "Call or visit borrowers in village V0012 (Nilagiri) first – it has the highest urgent count (4).  \nNext prioritize V0015 (3 urgent) and then V0016 (2 urgent) in the same subdivision.  \nWhen meeting each borrower, confirm they are safe, assess cyclone damage to home and livelihood, and check if they can travel to the branch.  \nNote that all urgent cases have high/medium exposure to the cyclone track and many had already missed EMIs before the event.",
+    "source": "llm"
+  },
+  "BR003": {
+    "facts": {
+      "branch_id": "BR003",
+      "district": "Cuttack",
+      "urgent_count": 7,
+      "watch_count": 53,
+      "top_villages": [
+        {
+          "village_id": "V0022",
+          "subdivision": "Athagarh",
+          "urgent_count": 4
+        },
+        {
+          "village_id": "V0019",
+          "subdivision": "Athagarh",
+          "urgent_count": 1
+        },
+        {
+          "village_id": "V0023",
+          "subdivision": "Athagarh",
+          "urgent_count": 1
+        }
+      ],
+      "top_villages_urgent_total": 6,
+      "top_reasons": [
+        {
+          "reason": "High/medium exposure to the cyclone track",
+          "borrower_count": 7
+        },
+        {
+          "reason": "Livelihood highly sensitive to the hazard",
+          "borrower_count": 7
+        },
+        {
+          "reason": "Already missed EMIs before the event",
+          "borrower_count": 7
+        }
+      ],
+      "exposed_outstanding_inr": 5970821.0,
+      "exposed_outstanding_million_inr": 5.97
+    },
+    "text": "7 urgent and 53 watch borrowers in branch BR003 (Cuttack).\nCall or visit first: Athagarh (4 urgent), Athagarh (1 urgent), Athagarh (1 urgent).\nCommon reasons flagged: High/medium exposure to the cyclone track (7); Livelihood highly sensitive to the hazard (7); Already missed EMIs before the event (7).\nExposed outstanding at this branch: ₹59,70,821.\nVerify borrower safety, livelihood damage, and ability to reach the branch or a field officer.",
+    "source": "template"
+  },
+  "BR004": {
+    "facts": {
+      "branch_id": "BR004",
+      "district": "Cuttack",
+      "urgent_count": 18,
+      "watch_count": 64,
+      "top_villages": [
+        {
+          "village_id": "V0029",
+          "subdivision": "Banki",
+          "urgent_count": 4
+        },
+        {
+          "village_id": "V0028",
+          "subdivision": "Banki",
+          "urgent_count": 3
+        },
+        {
+          "village_id": "V0030",
+          "subdivision": "Banki",
+          "urgent_count": 3
+        }
+      ],
+      "top_villages_urgent_total": 10,
+      "top_reasons": [
+        {
+          "reason": "High/medium exposure to the cyclone track",
+          "borrower_count": 18
+        },
+        {
+          "reason": "Already missed EMIs before the event",
+          "borrower_count": 18
+        },
+        {
+          "reason": "Livelihood highly sensitive to the hazard",
+          "borrower_count": 16
+        }
+      ],
+      "exposed_outstanding_inr": 5552964.0,
+      "exposed_outstanding_million_inr": 5.55
+    },
+    "text": "18 urgent and 64 watch borrowers in branch BR004 (Cuttack).\nCall or visit first: Banki (4 urgent), Banki (3 urgent), Banki (3 urgent).\nCommon reasons flagged: High/medium exposure to the cyclone track (18); Already missed EMIs before the event (18); Livelihood highly sensitive to the hazard (16).\nExposed outstanding at this branch: ₹55,52,964.\nVerify borrower safety, livelihood damage, and ability to reach the branch or a field officer.",
+    "source": "template"
+  },
+  "BR005": {
+    "facts": {
+      "branch_id": "BR005",
+      "district": "Cuttack",
+      "urgent_count": 26,
+      "watch_count": 154,
+      "top_villages": [
+        {
+          "village_id": "V0035",
+          "subdivision": "Cuttack",
+          "urgent_count": 7
+        },
+        {
+          "village_id": "V0037",
+          "subdivision": "Cuttack",
+          "urgent_count": 6
+        },
+        {
+          "village_id": "V0036",
+          "subdivision": "Cuttack",
+          "urgent_count": 5
+        }
+      ],
+      "top_villages_urgent_total": 18,
+      "top_reasons": [
+        {
+          "reason": "High/medium exposure to the cyclone track",
+          "borrower_count": 26
+        },
+        {
+          "reason": "Already missed EMIs before the event",
+          "borrower_count": 26
+        },
+        {
+          "reason": "Livelihood highly sensitive to the hazard",
+          "borrower_count": 18
+        }
+      ],
+      "exposed_outstanding_inr": 5567075.0,
+      "exposed_outstanding_million_inr": 5.57
+    },
+    "text": "Call or visit first the borrowers in the 26 urgent cases, focusing on those in villages V0035, V0037 and V0036.  \nPrioritize V0035 (7 urgent borrowers), then V0037 (6) and V0036 (5) for field outreach.  \nWhen you reach each borrower, confirm they are safe, assess cyclone‑related damage to home and livelihood, and check if they can travel to the branch or need assistance.  \nNote that many urgent borrowers are already exposed to high cyclone tracks and have missed EMIs, so gauge immediate cash‑flow needs.",
+    "source": "llm"
+  },
+  "BR006": {
+    "facts": {
+      "branch_id": "BR006",
+      "district": "Jagatsinghpur",
+      "urgent_count": 10,
+      "watch_count": 78,
+      "top_villages": [
+        {
+          "village_id": "V0042",
+          "subdivision": "Jagatsinghpur",
+          "urgent_count": 3
+        },
+        {
+          "village_id": "V0041",
+          "subdivision": "Jagatsinghpur",
+          "urgent_count": 2
+        },
+        {
+          "village_id": "V0044",
+          "subdivision": "Jagatsinghpur",
+          "urgent_count": 2
+        }
+      ],
+      "top_villages_urgent_total": 7,
+      "top_reasons": [
+        {
+          "reason": "High/medium exposure to the cyclone track",
+          "borrower_count": 10
+        },
+        {
+          "reason": "Already missed EMIs before the event",
+          "borrower_count": 10
+        },
+        {
+          "reason": "Livelihood highly sensitive to the hazard",
+          "borrower_count": 9
+        }
+      ],
+      "exposed_outstanding_inr": 5233608.0,
+      "exposed_outstanding_million_inr": 5.23
+    },
+    "text": "Call or visit the three urgent borrowers in village V0042 first, as it has the highest urgent count (3).  \nNext, go to the urgent borrowers in villages V0041 and V0044 (2 urgent each) before addressing the wider watch list of 78.  \nWhen meeting each borrower, confirm they are safe, assess cyclone‑related damage to home and livelihood, and check if they can travel to the branch.  \nNote that all urgent cases have high/medium exposure to the cyclone track and many had already missed EMIs, so prioritize relief and repayment flexibility.",
+    "source": "llm"
+  },
+  "BR007": {
+    "facts": {
+      "branch_id": "BR007",
+      "district": "Kalahandi",
+      "urgent_count": 0,
+      "watch_count": 0,
+      "top_villages": [],
+      "top_villages_urgent_total": 0,
+      "top_reasons": [],
+      "exposed_outstanding_inr": 0.0,
+      "exposed_outstanding_million_inr": 0.0
+    },
+    "text": "No urgent or watch‑list borrowers reported; there are no top villages or reasons flagged. Branch staff can hold off on emergency visits until new data arrives. Verify any new damage reports from the field before mobilising resources. Ensure routine safety checks continue for all clients.",
+    "source": "llm"
+  },
+  "BR008": {
+    "facts": {
+      "branch_id": "BR008",
+      "district": "Kalahandi",
+      "urgent_count": 0,
+      "watch_count": 0,
+      "top_villages": [],
+      "top_villages_urgent_total": 0,
+      "top_reasons": [],
+      "exposed_outstanding_inr": 0.0,
+      "exposed_outstanding_million_inr": 0.0
+    },
+    "text": "No borrowers are flagged as urgent or under watch, so there are no immediate calls or visits required.  \nMaintain routine contact with all villages in the branch’s portfolio, starting with any that have previously reported high loan balances.  \nWhen you reach a borrower, confirm they are safe, assess any damage to homes or crops, and ask if they can travel to the branch or need assistance.  \nDocument any livelihood impacts and note any changes in repayment capacity for future follow‑up.",
+    "source": "llm"
+  },
+  "BR009": {
+    "facts": {
+      "branch_id": "BR009",
+      "district": "Kendrapara",
+      "urgent_count": 9,
+      "watch_count": 43,
+      "top_villages": [
+        {
+          "village_id": "V0065",
+          "subdivision": "Kendraparha",
+          "urgent_count": 3
+        },
+        {
+          "village_id": "V0066",
+          "subdivision": "Kendraparha",
+          "urgent_count": 2
+        },
+        {
+          "village_id": "V0067",
+          "subdivision": "Kendraparha",
+          "urgent_count": 2
+        }
+      ],
+      "top_villages_urgent_total": 7,
+      "top_reasons": [
+        {
+          "reason": "High/medium exposure to the cyclone track",
+          "borrower_count": 9
+        },
+        {
+          "reason": "Livelihood highly sensitive to the hazard",
+          "borrower_count": 9
+        },
+        {
+          "reason": "Already missed EMIs before the event",
+          "borrower_count": 9
+        }
+      ],
+      "exposed_outstanding_inr": 5280369.0,
+      "exposed_outstanding_million_inr": 5.28
+    },
+    "text": "Call or visit the three urgent borrowers in village V0065 first (3 urgent cases).  \nThen reach the two urgent borrowers each in villages V0066 and V0067.  \nWhen meeting a borrower, confirm they are safe, assess cyclone damage to their livelihood, and check if they can travel to the branch.  \nAlso verify whether they have missed any EMIs before the cyclone and gauge immediate cash‑flow needs.",
+    "source": "llm"
+  },
+  "BR010": {
+    "facts": {
+      "branch_id": "BR010",
+      "district": "Khordha",
+      "urgent_count": 30,
+      "watch_count": 165,
+      "top_villages": [
+        {
+          "village_id": "V0075",
+          "subdivision": "Bhubaneshwar",
+          "urgent_count": 6
+        },
+        {
+          "village_id": "V0074",
+          "subdivision": "Bhubaneshwar",
+          "urgent_count": 4
+        },
+        {
+          "village_id": "V0076",
+          "subdivision": "Bhubaneshwar",
+          "urgent_count": 4
+        }
+      ],
+      "top_villages_urgent_total": 14,
+      "top_reasons": [
+        {
+          "reason": "High/medium exposure to the cyclone track",
+          "borrower_count": 30
+        },
+        {
+          "reason": "Already missed EMIs before the event",
+          "borrower_count": 30
+        },
+        {
+          "reason": "Livelihood highly sensitive to the hazard",
+          "borrower_count": 19
+        }
+      ],
+      "exposed_outstanding_inr": 5021955.0,
+      "exposed_outstanding_million_inr": 5.02
+    },
+    "text": "Call borrowers in village V0075 first (6 urgent cases).  \nVisit villages V0075, then V0074 and V0076 in Bhubaneshwar subdivision, as they hold the highest urgent counts.  \nWhen meeting each borrower, confirm they are safe, assess cyclone damage to home and livelihood, and check if they can travel to the branch.  \nAsk about missed EMIs and any immediate cash needs given their high exposure to the cyclone track.",
+    "source": "llm"
+  },
+  "BR011": {
+    "facts": {
+      "branch_id": "BR011",
+      "district": "Khordha",
+      "urgent_count": 18,
+      "watch_count": 55,
+      "top_villages": [
+        {
+          "village_id": "V0085",
+          "subdivision": "Khordha",
+          "urgent_count": 5
+        },
+        {
+          "village_id": "V0084",
+          "subdivision": "Khordha",
+          "urgent_count": 3
+        },
+        {
+          "village_id": "V0082",
+          "subdivision": "Khordha",
+          "urgent_count": 2
+        }
+      ],
+      "top_villages_urgent_total": 10,
+      "top_reasons": [
+        {
+          "reason": "High/medium exposure to the cyclone track",
+          "borrower_count": 18
+        },
+        {
+          "reason": "Already missed EMIs before the event",
+          "borrower_count": 18
+        },
+        {
+          "reason": "Livelihood highly sensitive to the hazard",
+          "borrower_count": 16
+        }
+      ],
+      "exposed_outstanding_inr": 5061880.0,
+      "exposed_outstanding_million_inr": 5.06
+    },
+    "text": "Call the five urgent borrowers in village V0085 first, then the three urgent borrowers in V0084 and the two in V0082.  \nPrioritize visits to villages V0085, V0084 and V0082, as they hold the highest urgent counts.  \nWhen you reach each borrower, confirm they are safe, assess cyclone damage to their home and livelihood, and check if they can travel to the branch.  \nNote that all 18 urgent cases have high exposure to the cyclone track and many already missed EMIs, so gauge immediate cash‑flow needs.  \nKeep the total exposed outstanding of INR 5,061,880 in mind while discussing repayment options.",
+    "source": "llm"
+  },
+  "BR012": {
+    "facts": {
+      "branch_id": "BR012",
+      "district": "Koraput",
+      "urgent_count": 0,
+      "watch_count": 0,
+      "top_villages": [],
+      "top_villages_urgent_total": 0,
+      "top_reasons": [],
+      "exposed_outstanding_inr": 0.0,
+      "exposed_outstanding_million_inr": 0.0
+    },
+    "text": "No borrowers are flagged as urgent or under watch, so start with a general sweep of all clients in the branch area. Prioritize visiting each village in the Koraput district to confirm basic safety first. Verify that each borrower’s family is unharmed, assess any damage to homes or farms, and check if they can travel to the branch. Record any emerging needs for livelihood support or loan restructuring. If any issues arise, flag them for immediate follow‑up.",
+    "source": "llm"
+  },
+  "BR013": {
+    "facts": {
+      "branch_id": "BR013",
+      "district": "Koraput",
+      "urgent_count": 0,
+      "watch_count": 0,
+      "top_villages": [],
+      "top_villages_urgent_total": 0,
+      "top_reasons": [],
+      "exposed_outstanding_inr": 0.0,
+      "exposed_outstanding_million_inr": 0.0
+    },
+    "text": "No borrowers are flagged as urgent or under watch, so there are no immediate calls or visits required. Since no top villages are identified, treat all villages in the branch’s area equally. When you do meet any borrower, confirm they are safe, check any cyclone damage to their home or livelihood, and assess whether they can travel to the branch. Keep records of any emerging needs for future follow‑up.",
+    "source": "llm"
+  },
+  "BR014": {
+    "facts": {
+      "branch_id": "BR014",
+      "district": "Puri",
+      "urgent_count": 20,
+      "watch_count": 111,
+      "top_villages": [
+        {
+          "village_id": "V0112",
+          "subdivision": "Puri - Subdivision 1",
+          "urgent_count": 7
+        },
+        {
+          "village_id": "V0110",
+          "subdivision": "Puri - Subdivision 1",
+          "urgent_count": 5
+        },
+        {
+          "village_id": "V0111",
+          "subdivision": "Puri - Subdivision 1",
+          "urgent_count": 3
+        }
+      ],
+      "top_villages_urgent_total": 15,
+      "top_reasons": [
+        {
+          "reason": "High/medium exposure to the cyclone track",
+          "borrower_count": 20
+        },
+        {
+          "reason": "Already missed EMIs before the event",
+          "borrower_count": 20
+        },
+        {
+          "reason": "Livelihood highly sensitive to the hazard",
+          "borrower_count": 14
+        }
+      ],
+      "exposed_outstanding_inr": 5045159.0,
+      "exposed_outstanding_million_inr": 5.05
+    },
+    "text": "Call borrowers in village V0112 first (7 urgent cases), then V0110 (5 urgent), followed by V0111 (3 urgent).  \nPrioritize these three villages in Puri - Subdivision 1 for immediate outreach.  \nWhen meeting each borrower, confirm they are safe, assess cyclone damage to home and livelihood, and check if they can travel to the branch.  \nNote the high/medium exposure to the cyclone track and any prior missed EMIs as red flags for repayment risk.",
+    "source": "llm"
+  },
+  "BR015": {
+    "facts": {
+      "branch_id": "BR015",
+      "district": "Puri",
+      "urgent_count": 37,
+      "watch_count": 199,
+      "top_villages": [
+        {
+          "village_id": "V0120",
+          "subdivision": "Puri",
+          "urgent_count": 8
+        },
+        {
+          "village_id": "V0115",
+          "subdivision": "Puri",
+          "urgent_count": 6
+        },
+        {
+          "village_id": "V0118",
+          "subdivision": "Puri",
+          "urgent_count": 6
+        }
+      ],
+      "top_villages_urgent_total": 20,
+      "top_reasons": [
+        {
+          "reason": "High/medium exposure to the cyclone track",
+          "borrower_count": 37
+        },
+        {
+          "reason": "Already missed EMIs before the event",
+          "borrower_count": 37
+        },
+        {
+          "reason": "Livelihood highly sensitive to the hazard",
+          "borrower_count": 29
+        }
+      ],
+      "exposed_outstanding_inr": 5315332.0,
+      "exposed_outstanding_million_inr": 5.32
+    },
+    "text": "37 urgent and 199 watch borrowers in branch BR015 (Puri).\nCall or visit first: Puri (8 urgent), Puri (6 urgent), Puri (6 urgent).\nCommon reasons flagged: High/medium exposure to the cyclone track (37); Already missed EMIs before the event (37); Livelihood highly sensitive to the hazard (29).\nExposed outstanding at this branch: ₹53,15,332.\nVerify borrower safety, livelihood damage, and ability to reach the branch or a field officer.",
+    "source": "template"
+  }
+}

@@ -1,0 +1,120 @@
+# SANKALP – Climate-Risk Early Warning: central config
+# Every tunable number lives here. Values are PROTOTYPE ASSUMPTIONS,
+# to be calibrated with real lender data.
+
+app:
+  project_name: "Sajag"  # placeholder - swap for the real product name
+  tagline: "Climate-Risk Early Warning & Outreach"
+
+event:
+  name: "Cyclone Fani"
+  hazard_type: cyclone
+  ibtracs_name: "FANI"
+  season: 2019
+  landfall_date: "2019-05-03"
+
+region:
+  state: "Odisha"
+  affected_districts: [Puri, Khordha, Cuttack, Jagatsinghpur, Kendrapara, Balasore]
+  # Far-inland districts included as a reference comparison, NOT a claim
+  # that they were unaffected: under hazard.exposure_model: wind_radii,
+  # some villages here do fall within Fani's real (measured) gale-force
+  # wind swath and score 'low' - just never 'high'/'medium' under either
+  # model (see tests/test_scoring.py).
+  reference_districts: [Koraput, Kalahandi]
+  # Shapefile spelling variants to normalise before joining
+  name_aliases:
+    Khurda: Khordha
+    Baleshwar: Balasore
+    Jagatsinghapur: Jagatsinghpur
+
+hazard:
+  # "circle": flat distance bands below (bands_km). "wind_radii": quadrant-
+  # aware exposure using Fani's real per-quadrant wind radii (IBTrACS
+  # USA_R34/R64) - see src/hazard.assign_exposure_wind_radii. Only wired
+  # into src/scoring.py (the static, final-tier scoring) for now; Countdown's
+  # per-lead-time forecast-track rescoring still uses "circle" regardless of
+  # this flag (see src/countdown.py's module docstring for why).
+  exposure_model: circle
+  # Minimum sustained wind (knots) for a track point to count toward the hazard line
+  min_wind_kt: 64
+  # Distance from cyclone track (km) -> exposure band
+  bands_km:
+    high: 50
+    medium: 120      # beyond this = low
+  # Forecast position-uncertainty by lead time (hours before landfall) -> km.
+  # Illustrative assumption; interpolated linearly between the given hours.
+  forecast_error_km: {0: 0, 24: 80, 48: 150, 72: 220}
+  # Countdown scenarios: each forecast track is the true track displaced
+  # sideways (perpendicular to travel) by this fraction of forecast_error_km
+  # at that lead time; the remainder is residual radial uncertainty around
+  # that displaced track. inland/seaward use <=1.0 (the residual buffer always
+  # covers the offset, so recall==100% is guaranteed - see countdown.py).
+  # forecast_miss deliberately overshoots (>1.0) to model the storm's true
+  # position falling outside the forecast cone entirely.
+  scenarios: {inland: 0.5, seaward: 0.5, forecast_miss: 1.5}
+
+portfolio:
+  seed: 42
+  n_borrowers: 5000
+  villages_per_tehsil: 8
+  coastal_districts: [Puri, Jagatsinghpur, Kendrapara, Balasore]
+  tenure_months: 24
+  occupation_mix:          # overall shares; coastal areas skew to farm/fish in Phase 2
+    farmer: 0.35
+    dairy_livestock: 0.20
+    fisherfolk: 0.10
+    kirana_shop: 0.20
+    tailoring_handicraft: 0.10
+    other_services: 0.05
+  loan_amount_inr: {min: 15000, max: 75000}
+  missed_emi_distribution: {0: 0.80, 1: 0.12, 2: 0.06, 3: 0.02}
+
+vulnerability:
+  # occupation x hazard -> livelihood sensitivity (0-1)
+  cyclone:
+    farmer: 0.9
+    dairy_livestock: 0.85
+    fisherfolk: 0.95
+    kirana_shop: 0.5
+    tailoring_handicraft: 0.45
+    other_services: 0.4
+
+repayment_stress:
+  # missed EMIs -> stress score (3+ treated as 3)
+  scores: {0: 0.0, 1: 0.5, 2: 1.0, 3: 1.0}
+
+priority:
+  weights: {exposure: 0.40, vulnerability: 0.25, stress: 0.35}
+  # Borrowers whose exposure_band falls outside this gate are 'not_exposed',
+  # regardless of priority_score.
+  exposure_gate: [high, medium]
+  # Frozen by a threshold sweep over the scored portfolio (Phase 3, tuning pass 3):
+  # high ~4% of borrowers, medium ~20% of borrowers. Re-sweep if the underlying
+  # scoring (weights, exposure formula, portfolio) changes.
+  tiers:               # priority score thresholds
+    high: 0.68
+    medium: 0.46       # below this = low
+  # Minimum values for a scoring component to be worth surfacing as a "reason"
+  reason_thresholds:
+    vulnerability_high: 0.7
+    min_missed_emis: 1
+  actions:
+    high: "Early outreach + verify livelihood impact + credit-team review"
+    medium: "Outreach call + monitor next EMI"
+    low: "Monitor"
+    not_exposed: "Routine monitoring"
+
+# Response strategies (do nothing / targeted / blanket / staged) vs. each
+# other: illustrative assumptions only, editable in the app's "Assumptions"
+# expander. See src/comparison.py for how these combine into ₹ deferred /
+# cost / loss avoided. Every deferring strategy pays the same liquidity-cost
+# formula on its own deferred EMIs - there's no strategy-specific exemption.
+comparison:
+  outreach_cost_inr: 150          # per borrower actually contacted
+  pd_uplift_pp: {high: 25, medium: 12, low: 3}  # post-disaster default-probability increase, no intervention
+  lgd_pct: 60                     # loss given default - no collateral assumed
+  effectiveness_pct: 40           # % of PD uplift offset for borrowers who get a real deferral + review
+  outreach_only_effectiveness_pct: 10  # % of PD uplift offset for a light-touch call/SMS with no deferral (Staged)
+  cost_of_funds_pct: 8            # ANNUAL cost of funds, applied only to the EMIs actually deferred
+  moratorium_months: 3            # how many months of EMIs a moratorium actually pauses

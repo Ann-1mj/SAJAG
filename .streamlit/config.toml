@@ -1,0 +1,14 @@
+[theme]
+base = "dark"
+# "Calm ops room" palette: deep blue-slate surfaces, one cyan accent reserved
+# for interactive elements. Risk colors (High/Medium/Low, src/labels.py
+# TIER_COLORS) are never reused here - the app's own accent must not compete
+# with that signal.
+primaryColor = "#4CC3D9"
+backgroundColor = "#0E141B"
+secondaryBackgroundColor = "#151D26"
+textColor = "#E6EAF0"
+font = "sans serif"
+
+[client]
+toolbarMode = "minimal"

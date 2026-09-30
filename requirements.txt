@@ -1,0 +1,12 @@
+pandas
+geopandas
+shapely
+pyyaml
+streamlit==1.64.0
+plotly==7.1.0
+pyarrow==24.0.0
+pytest
+groq
+python-dotenv
+folium
+streamlit-folium
