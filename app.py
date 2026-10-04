@@ -27,7 +27,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from src.hazard import METRIC_CRS, load_track_points  # noqa: E402
-from src.labels import EXPOSURE_BAND_LABELS, OCCUPATION_LABELS, TIER_COLORS, TIER_LABELS  # noqa: E402
+from src.labels import EXPOSURE_BAND_LABELS, OCCUPATION_LABELS, TIER_LABELS  # noqa: E402
 from src.countdown import (  # noqa: E402
     build_scenario_tracks,
     load_base_villages,
@@ -69,6 +69,12 @@ MUTED = "#8A96A6"
 ACCENT = "#4CC3D9"
 DIVIDER = "#232E3A"
 GRID = "#232E3A"
+RISK_PALETTE = {
+    "high": "#C85A61",
+    "medium": "#C49A45",
+    "low": "#617A92",
+    "not_exposed": "#4A5663",
+}
 
 # Landing-page refinement (landing only; the dashboard keeps the tokens above).
 LANDING_BG = "#0B1219"
@@ -83,7 +89,7 @@ COUNTDOWN_SCENARIO_LABELS = {"Inland": "inland", "Seaward": "seaward", "Forecast
 COUNTDOWN_LINE_STYLE = {
     "inland": (ACCENT, "Inland"),
     "seaward": ("#3E9C7D", "Seaward"),
-    "forecast_miss": (TIER_COLORS["high"], "Forecast missed"),
+    "forecast_miss": (RISK_PALETTE["high"], "Forecast missed"),
 }
 
 TIMELINE_STOPS = (72, 48, 24, 12, 0)
@@ -139,7 +145,7 @@ def inject_custom_css():
            window) so zooming out widens the layout instead of leaving a fixed
            1400px column in the middle of a larger screen. */
         div.block-container:has([class*="st-key-sajag_landing_cta"]) {{
-            max-width: clamp(1400px, 73vw, 2400px);
+            max-width: min(100%, 1680px);
         }}
         /* App pages (not landing): one shared content container for header, nav,
            controls, KPIs, map panel and tables. */
@@ -371,6 +377,18 @@ def inject_custom_css():
             padding-top: 8px; padding-bottom: 8px; font-size: 0.85rem; color: {MUTED};
         }}
         [class*="st-key-sajag_controls"] [data-testid="stExpander"] summary:hover {{ color: {TEXT}; }}
+        [class*="st-key-sajag_controls"] [data-testid="stExpander"] {{
+            border: 0;
+            border-radius: 0;
+            background: transparent;
+        }}
+        [class*="st-key-sajag_controls"] [data-testid="stExpander"] details {{
+            border: 0 !important;
+            background: transparent;
+        }}
+        [class*="st-key-sajag_controls"] [data-testid="stExpander"] summary {{
+            padding: 4px 0;
+        }}
         [class*="st-key-sajag_controls"] [data-testid="stButton"] button {{
             min-height: 0; padding: 8px 18px; border-radius: 8px;
             background: transparent; border: 1px solid {DIVIDER}; color: {TEXT}; font-size: 0.85rem;
@@ -782,6 +800,13 @@ def inject_custom_css():
             padding-bottom: 7px;
         }}
         @media (max-width: 900px) {{
+            [class*="st-key-sajag_timeline"] [data-testid="stHorizontalBlock"] {{
+                grid-template-columns: 0.8fr 1.65fr 1.65fr 1.65fr 1.2fr;
+            }}
+            [class*="st-key-sajag_timeline"] .st-key-tl_0 [data-testid="stButton"] button p {{
+                font-size: 0.58rem;
+                letter-spacing: 0.02em;
+            }}
             .stApp:has([class*="st-key-sajag_topbar"]) [class*="st-key-sajag_row2"] [data-testid="stHorizontalBlock"]:has([class*="st-key-sajag_timeline"]) {{
                 grid-template-columns: minmax(300px, 0.9fr) minmax(0, 2fr);
                 column-gap: 8px;
@@ -1019,6 +1044,236 @@ def inject_custom_css():
             border-radius: 2px;
             background: transparent;
         }}
+        .sajag-page-intro {{
+            max-width: 72ch;
+            margin: -8px 0 18px;
+            color: #9AA7B5;
+            font-size: 0.95rem;
+            line-height: 1.55;
+        }}
+        .sajag-kpi-row {{
+            gap: clamp(12px, 2vw, 28px);
+            margin: 10px 0 24px;
+        }}
+        .sajag-kpi {{
+            padding: 15px 18px 13px;
+            border: 0;
+            border-right: 1px solid #26323D;
+            border-radius: 0;
+            box-shadow: none;
+            animation: none;
+        }}
+        .sajag-kpi-row {{
+            gap: 0;
+            border-top: 1px solid #26323D;
+            border-bottom: 1px solid #26323D;
+            background: #10171E;
+        }}
+        .sajag-kpi:last-child {{ border-right: 0; }}
+        .sajag-kpi::before {{ left: 18px; top: 0; width: 20px; border-radius: 0; }}
+        .sajag-kpi-value {{ font-size: clamp(1.75rem, 2.4vw, 2.35rem); }}
+        .sajag-kpi--primary {{
+            background: rgba(200, 90, 97, 0.045);
+        }}
+        .sajag-kpi--primary::before {{ background: {RISK_PALETTE["high"]}; width: 34px; }}
+        .sajag-kpi--primary .sajag-kpi-label {{ color: #D79A9D; }}
+        [class*="st-key-sajag_risk_panel"] {{
+            border: 0;
+            border-radius: 0;
+            padding: 4px 0 12px;
+            margin-bottom: 18px;
+        }}
+        .sajag-actions-table {{
+            border-color: #26323D;
+            border-radius: 2px;
+            background: #10171E;
+        }}
+        .sajag-actions-table tbody tr:has(.sajag-action-tier) {{ background: transparent; }}
+        .sajag-action-tier {{
+            padding: 3px 8px;
+            border: 1px solid transparent;
+            border-left-width: 2px;
+            background: #171F28;
+            font-size: 0.74rem;
+            line-height: 1.5;
+        }}
+        .sajag-action-tier--high {{ background: #281D22; border-color: #5C353A; border-left-color: #C85A61; color: #F2B8B8; }}
+        .sajag-action-tier--medium {{ background: #272319; border-color: #51452B; border-left-color: #C49A45; color: #E5C98A; }}
+        .sajag-action-tier--low {{ background: #1A232D; border-color: #303E4C; border-left-color: #617A92; color: #9FB1C4; }}
+        .sajag-action-tier--not-exposed {{ background: #171F28; border-color: #2E3945; border-left-color: #4A5663; color: #7F8B98; }}
+        [class*="st-key-sajag_topbar"] div[role="radiogroup"] {{
+            flex-direction: row;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 2px;
+        }}
+        [class*="st-key-sajag_topbar"] div[role="radiogroup"] label {{ padding: 0 9px !important; }}
+        .sajag-hero-stage {{
+            min-height: clamp(300px, 35vw, 520px);
+            max-height: 680px;
+        }}
+        .sajag-fbar {{
+            background: var(--c);
+            border: 1px solid rgba(235, 192, 193, 0.2);
+        }}
+        .sajag-fnum {{ color: #F3E9E7; }}
+        .sajag-fprec {{ color: rgba(243, 233, 231, 0.78); }}
+        .sajag-fconn > div:nth-child(2) {{ opacity: 0.28; }}
+        .sajag-measure-intro {{
+            color: #9AA7B5;
+            font-size: 0.95rem;
+            margin: -7px 0 16px;
+        }}
+        .sajag-measure-break-even {{
+            display: flex;
+            align-items: baseline;
+            flex-wrap: wrap;
+            gap: 6px 10px;
+            margin: 12px 0 18px;
+            padding: 12px 0;
+            border-top: 1px solid #26323D;
+            border-bottom: 1px solid #26323D;
+            color: #A9B4C0;
+            font-size: 0.86rem;
+        }}
+        .sajag-measure-break-even strong {{
+            color: #9AD9E3;
+            font: 600 1.15rem "IBM Plex Mono", monospace;
+            font-variant-numeric: tabular-nums;
+        }}
+        .sajag-measure-comparison {{
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            border-top: 1px solid #26323D;
+            border-bottom: 1px solid #26323D;
+            background: #10171E;
+        }}
+        .sajag-measure-strategy {{ min-width: 0; padding: 18px clamp(14px, 2vw, 26px); }}
+        .sajag-measure-strategy + .sajag-measure-strategy {{ border-left: 1px solid #26323D; }}
+        .sajag-measure-strategy--targeted {{
+            background: rgba(76, 195, 217, 0.035);
+            box-shadow: inset 2px 0 0 rgba(76, 195, 217, 0.62);
+        }}
+        .sajag-measure-strategy-title {{
+            color: #E6EAF0;
+            font-size: 0.78rem;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }}
+        .sajag-measure-strategy-note {{
+            min-height: 2.8em;
+            margin: 5px 0 14px;
+            color: #8A96A6;
+            font-size: 0.8rem;
+            line-height: 1.45;
+        }}
+        .sajag-measure-metrics {{
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px 20px;
+        }}
+        .sajag-measure-metric-label {{
+            color: #8A96A6;
+            font-size: 0.65rem;
+            letter-spacing: 0.07em;
+            text-transform: uppercase;
+        }}
+        .sajag-measure-metric-value {{
+            margin-top: 3px;
+            color: #E6EAF0;
+            font: 500 1rem "IBM Plex Mono", monospace;
+            font-variant-numeric: tabular-nums;
+        }}
+        .sajag-measure-metric--net .sajag-measure-metric-value {{ color: #9AD9E3; }}
+        .sajag-measure-detail {{ margin-top: 18px; border-top: 1px solid #26323D; }}
+        .sajag-priority-overview {{
+            margin: 10px 0 22px;
+            padding: 14px 0 15px;
+            border-top: 1px solid #26323D;
+            border-bottom: 1px solid #26323D;
+        }}
+        .sajag-priority-counts {{
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 16px;
+        }}
+        .sajag-priority-count {{ min-width: 0; }}
+        .sajag-priority-value {{
+            font: 600 clamp(1.35rem, 2.2vw, 1.9rem)/1.15 "IBM Plex Mono", monospace;
+            font-variant-numeric: tabular-nums;
+            color: #E6EAF0;
+        }}
+        .sajag-priority-label {{
+            margin-top: 3px;
+            color: #8A96A6;
+            font-size: 0.66rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }}
+        .sajag-priority-count--high .sajag-priority-value {{ color: #E2A0A2; }}
+        .sajag-priority-count--medium .sajag-priority-value {{ color: #D9BF85; }}
+        .sajag-priority-count--low .sajag-priority-value {{ color: #9FB1C4; }}
+        .sajag-priority-meter {{
+            display: flex;
+            height: 5px;
+            margin: 14px 0 17px;
+            overflow: hidden;
+            background: #202B35;
+        }}
+        .sajag-priority-meter span {{ display: block; min-width: 1px; }}
+        .sajag-priority-driver-head {{
+            margin-bottom: 7px;
+            color: #8A96A6;
+            font-size: 0.64rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }}
+        .sajag-priority-drivers {{
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 16px;
+        }}
+        .sajag-priority-driver {{
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            padding-top: 7px;
+            border-top: 1px solid #26323D;
+            color: #CBD3DC;
+            font-size: 0.82rem;
+        }}
+        .sajag-priority-driver strong {{
+            color: #AEB9C4;
+            font: 500 0.78rem "IBM Plex Mono", monospace;
+            white-space: nowrap;
+        }}
+        [data-testid="stDataFrame"] {{ border: 1px solid #26323D; border-radius: 2px; }}
+        [data-testid="stExpander"] {{ border-radius: 2px; }}
+        @media (max-width: 720px) {{
+            .sajag-panel-head {{ flex-wrap: wrap; align-items: flex-start; }}
+            .sajag-panel-context {{ max-width: 100%; white-space: normal; }}
+            [class*="st-key-sajag_risk_panel"] [data-testid="stHorizontalBlock"] {{
+                grid-template-columns: minmax(0, 1fr);
+                row-gap: 12px;
+            }}
+            .sajag-measure-comparison {{ grid-template-columns: minmax(0, 1fr); }}
+            .sajag-measure-strategy + .sajag-measure-strategy {{
+                border-left: 0;
+                border-top: 1px solid #26323D;
+            }}
+            .sajag-measure-strategy--targeted {{ box-shadow: inset 0 2px 0 rgba(76, 195, 217, 0.62); }}
+            .sajag-priority-counts {{ grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 12px; }}
+            .sajag-priority-drivers {{ grid-template-columns: minmax(0, 1fr); gap: 8px; }}
+            .sajag-funnel {{ width: 100%; }}
+            .sajag-flabel {{ gap: 5px; }}
+            .sajag-fidx {{ display: none; }}
+            [data-testid="stHorizontalBlock"]:has(.sajag-howstep) {{
+                display: grid !important;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 10px;
+            }}
+        }}
         @media (max-width: 720px) {{
             [class*="st-key-sajag_act_page"] .sajag-act-summary {{
                 grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1165,19 +1420,25 @@ def apply_filters(df):
     return df[mask]
 
 
-def _style_tier_column(display_df, soft=False):
-    """soft=True: tier-coloured text on a faint tint of the same colour,
-    instead of a solid fill."""
+def _style_tier_column(display_df):
+    """Keep risk tiers legible and muted rather than using saturated fills."""
     label_to_tier = {v: k for k, v in TIER_LABELS.items()}
+    style_by_tier = {
+        "high": ("#281D22", "#F2B8B8", "#C85A61"),
+        "medium": ("#272319", "#E5C98A", "#C49A45"),
+        "low": ("#1A232D", "#9FB1C4", "#617A92"),
+        "not_exposed": ("#171F28", "#7F8B98", "#4A5663"),
+    }
 
     def _cell_style(value):
-        color = TIER_COLORS.get(label_to_tier.get(value))
-        if not color:
+        tier = label_to_tier.get(value)
+        if tier not in style_by_tier:
             return ""
-        if soft:
-            r, g, b = (int(color[i:i + 2], 16) for i in (1, 3, 5))
-            return f"background-color: rgba({r}, {g}, {b}, 0.14); color: {color}; font-weight: 600"
-        return f"background-color: {color}; color: white; font-weight: 600"
+        background, text, accent = style_by_tier[tier]
+        return (
+            f"background-color: {background}; color: {text}; "
+            f"border-left: 2px solid {accent}; font-weight: 600"
+        )
 
     return display_df.style.map(_cell_style, subset=["Tier"])
 
@@ -1283,7 +1544,7 @@ def render_detail_panel(borrower):
     recommended action highlighted in a callout strip."""
     st.markdown("<div class='sajag-divider'></div>", unsafe_allow_html=True)
     tier = borrower["tier"]
-    tier_color = TIER_COLORS.get(tier, MUTED)
+    tier_color = RISK_PALETTE.get(tier, MUTED)
     st.markdown(
         f"""
         <div class="sajag-case-header">
@@ -1445,7 +1706,7 @@ def _district_high_bar_chart(df):
     if counts.empty:
         return None
     colors = [
-        "#D8787B" if value == counts.max() else "rgba(184, 101, 105, 0.76)"
+        "#C85A61" if value == counts.max() else "rgba(153, 82, 88, 0.72)"
         for value in counts.values
     ]
     fig = go.Figure(go.Bar(
@@ -1454,7 +1715,7 @@ def _district_high_bar_chart(df):
         textfont=dict(family="IBM Plex Mono, monospace", color=MUTED, size=11),
     ))
     fig.update_layout(_plotly_layout(
-        height=max(210, 31 * len(counts) + 20), bargap=0.56,
+        height=max(210, 31 * len(counts) + 20), bargap=0.72,
         margin=dict(l=8, r=40, t=4, b=4),
         xaxis=dict(title=None, showgrid=False, showticklabels=False, zeroline=False),
         yaxis=dict(color=TEXT, ticksuffix="  ", automargin=True),
@@ -1566,8 +1827,8 @@ def _precision_funnel_chart(summary_table, scenario="inland", stops=TIMELINE_STO
             text=[f"{v:,} · {p:.0f}% precision" for _, v, p in rows],
             textinfo="text",
             textposition="inside",
-            textfont=dict(color=BG, size=13),
-            marker=dict(color=TIER_COLORS["high"]),
+            textfont=dict(color="#F3E9E7", size=13),
+            marker=dict(color=RISK_PALETTE["high"]),
             connector=dict(line=dict(color=GRID, width=1)),
         )
     )
@@ -1577,6 +1838,10 @@ def _precision_funnel_chart(summary_table, scenario="inland", stops=TIMELINE_STO
 
 def render_measure(df, config):
     st.subheader("Measure")
+    st.markdown(
+        "<p class='sajag-measure-intro'>Does targeted outreach reduce expected losses enough to justify its cost?</p>",
+        unsafe_allow_html=True,
+    )
     if df.empty:
         st.info("No borrowers match the current filters.")
         return
@@ -1589,71 +1854,116 @@ def render_measure(df, config):
 
     breakeven = breakeven_effectiveness_pct(df, assumptions)
     if breakeven is None:
-        st.markdown("## Outreach pays for itself: n/a — no default-probability uplift is assumed")
-        st.caption("No PD uplift is assumed, so outreach has nothing to offset - this isn't a claim that outreach is worthless.")
+        break_even_value = "n/a"
+        if result["targeted"]["contacted"] == 0:
+            break_even_note = "No High- or Medium-priority borrowers are present in the current filtered view."
+        else:
+            break_even_note = "No modeled avoided-loss base is available for the targeted cohort under these assumptions."
     else:
         pct_display = f"{min(breakeven, 999):.1f}%" if breakeven <= 100 else f"{breakeven:.0f}%"
+        break_even_value = pct_display
+        if breakeven > 100:
+            break_even_note = (
+                "Exceeds 100%; under these assumptions, no achievable effectiveness makes outreach's benefit exceed its cost."
+            )
+        else:
+            break_even_note = (
+                "Below this share, targeted outreach's cost exceeds its expected benefit; above it, benefit exceeds cost."
+            )
+    st.markdown(
+        f"<div class='sajag-measure-break-even'><span>Break-even effectiveness</span>"
+        f"<strong>{html.escape(break_even_value)}</strong>"
+        "<span>of excess post-disaster defaults prevented</span>"
+        f"<span>· {html.escape(break_even_note)}</span></div>",
+        unsafe_allow_html=True,
+    )
+
+    def strategy_metrics(summary, is_targeted=False):
+        net_value = summary["net_vs_do_nothing_inr"]
+        metric_items = (
+            ("Borrowers contacted", f"{summary['contacted']:,}", ""),
+            ("Expected loss avoided", format_inr_lakh_cr(summary["expected_loss_avoided_inr"]), ""),
+            ("Total strategy cost", format_inr_lakh_cr(summary["total_cost_inr"]), ""),
+            ("Net vs. do nothing", format_inr_lakh_cr(net_value), " sajag-measure-metric--net"),
+        )
+        metrics_html = "".join(
+            f"<div class='{metric_class.strip()}'>"
+            f"<div class='sajag-measure-metric-label'>{html.escape(label)}</div>"
+            f"<div class='sajag-measure-metric-value'>{html.escape(value)}</div></div>"
+            for label, value, metric_class in metric_items
+        )
+        strategy_class = " sajag-measure-strategy--targeted" if is_targeted else ""
+        note = (
+            "Reactive baseline · no proactive outreach"
+            if not is_targeted
+            else "Targeted outreach to High + Medium borrowers under the current policy"
+        )
+        return (
+            f"<section class='sajag-measure-strategy{strategy_class}'>"
+            f"<div class='sajag-measure-strategy-title'>{'Targeted outreach' if is_targeted else 'Do nothing'}</div>"
+            f"<div class='sajag-measure-strategy-note'>{note}</div>"
+            f"<div class='sajag-measure-metrics'>{metrics_html}</div></section>"
+        )
+
+    comparison_html = (
+        "<div class='sajag-measure-comparison'>"
+        f"{strategy_metrics(result['do_nothing'])}"
+        f"{strategy_metrics(result['targeted'], is_targeted=True)}</div>"
+    )
+    st.markdown(comparison_html, unsafe_allow_html=True)
+
+    with st.expander("Strategy comparison and methodology", expanded=False):
+        st.caption(
+            "Do nothing is the reactive baseline, with zero cost and zero avoided loss by definition. "
+            "Targeted contacts High + Medium borrowers. Blanket offers a moratorium to every exposed borrower. "
+            "Staged uses outreach-only at T-72h, then deferral and review for borrowers still High at T-24h "
+            f"under the {COUNTDOWN_LINE_STYLE.get(scenario, (None, scenario))[1]} scenario. Deferred cash is "
+            "repayment paused, not a cost; strategy costs include outreach/admin and liquidity cost. Net vs. "
+            "do-nothing shows each strategy's outcome relative to the baseline, not a ranking."
+        )
+        st.dataframe(_strategy_comparison_table(result), width="stretch")
+
+    with st.expander("Sensitivity analysis", expanded=False):
+        st.caption("Net benefit if the post-disaster PD uplift is 0.5x / 1x / 1.5x the assumption above.")
+        sens_rows = sensitivity_table(df, assumptions)
+        sens_display = pd.DataFrame(
+            {
+                "PD uplift": [f"{r['multiplier']:.1f}x" for r in sens_rows],
+                "Targeted net benefit": [format_inr_lakh_cr(r["targeted_net_inr"]) for r in sens_rows],
+                "Blanket net benefit": [format_inr_lakh_cr(r["blanket_net_inr"]) for r in sens_rows],
+            }
+        )
+        st.dataframe(sens_display, hide_index=True, width="stretch")
+
+    with st.expander("Forecast evidence and list narrowing", expanded=False):
+        st.markdown("<div class='sajag-section-label'>LIST NARROWING</div>", unsafe_allow_html=True)
+        st.caption("How the High-tier list narrows as landfall approaches, inland scenario.")
+        summary_table = summarize_countdown(load_countdown())
+        funnel_fig = _precision_funnel_chart(summary_table, scenario="inland")
+        if funnel_fig is not None:
+            _plot(funnel_fig)
+
+        st.markdown("<div class='sajag-section-label'>HIGH COUNT & STRICT PRECISION VS. LEAD TIME</div>", unsafe_allow_html=True)
+        st.caption(
+            "As landfall approaches, the High-tier list narrows and gets more precise - consistency with the "
+            "landfall assessment, not accuracy in an absolute sense, since the T-0h read is itself only ever an estimate."
+        )
+        chart_col1, chart_col2 = st.columns(2)
+        with chart_col1:
+            _plot(_lead_time_line_chart(summary_table, "high", "High-tier count"))
+        with chart_col2:
+            _plot(_lead_time_line_chart(summary_table, "strict_precision_pct", "Strict precision (%)"))
+
         st.markdown(
-            f"## Outreach pays for itself if it prevents "
-            f"<span class='sajag-mono' style='color:{ACCENT};'>{pct_display}</span> "
-            f"of excess (post-disaster) defaults",
+            "<div class='sajag-section-label'>FORECAST QUALITY: CONSISTENCY WITH LANDFALL ASSESSMENT</div>",
             unsafe_allow_html=True,
         )
-        if breakeven > 100:
-            st.caption("Exceeds 100% - under these assumptions, no achievable effectiveness makes outreach's benefit exceed its cost.")
-        else:
-            st.caption("Below this share, targeted outreach's cost exceeds its expected benefit; above it, benefit exceeds cost.")
-
-    st.markdown("<div class='sajag-divider'></div>", unsafe_allow_html=True)
-    st.markdown("<div class='sajag-section-label'>STRATEGY COMPARISON</div>", unsafe_allow_html=True)
-    st.caption(
-        "Do nothing = reactive baseline, zero cost/zero avoided loss by definition. "
-        "Targeted = outreach to High + Medium tier only (current policy, single point in time). "
-        "Blanket = moratorium offered to every exposed borrower (High + Medium + Low). "
-        "Staged = outreach-only at T-72h to High + Medium, then deferral + review only for whoever is still "
-        f"High at T-24h under the {COUNTDOWN_LINE_STYLE.get(scenario, (None, scenario))[1]} scenario. "
-        "Deferred cash is money whose repayment is paused, not a cost - only outreach and liquidity cost are "
-        "actual costs. Net vs. do-nothing shows each strategy's outcome relative to that baseline, not a ranking."
-    )
-    st.dataframe(_strategy_comparison_table(result), width="stretch")
-
-    st.markdown("<div class='sajag-section-label'>SENSITIVITY</div>", unsafe_allow_html=True)
-    st.caption("Net benefit if the post-disaster PD uplift is 0.5x / 1x / 1.5x the assumption above.")
-    sens_rows = sensitivity_table(df, assumptions)
-    sens_display = pd.DataFrame(
-        {
-            "PD uplift": [f"{r['multiplier']:.1f}x" for r in sens_rows],
-            "Targeted net benefit": [format_inr_lakh_cr(r["targeted_net_inr"]) for r in sens_rows],
-            "Blanket net benefit": [format_inr_lakh_cr(r["blanket_net_inr"]) for r in sens_rows],
-        }
-    )
-    st.dataframe(sens_display, hide_index=True, width="stretch")
-
-    st.markdown("<div class='sajag-section-label'>LIST NARROWING</div>", unsafe_allow_html=True)
-    st.caption("How the High-tier list narrows as landfall approaches, inland scenario.")
-    summary_table = summarize_countdown(load_countdown())
-    funnel_fig = _precision_funnel_chart(summary_table, scenario="inland")
-    if funnel_fig is not None:
-        _plot(funnel_fig)
-
-    st.markdown("<div class='sajag-section-label'>HIGH COUNT & STRICT PRECISION VS. LEAD TIME</div>", unsafe_allow_html=True)
-    st.caption(
-        "As landfall approaches, the High-tier list narrows and gets more precise - consistency with the "
-        "landfall assessment, not accuracy in an absolute sense, since the T-0h read is itself only ever an estimate."
-    )
-    chart_col1, chart_col2 = st.columns(2)
-    with chart_col1:
-        _plot(_lead_time_line_chart(summary_table, "high", "High-tier count"))
-    with chart_col2:
-        _plot(_lead_time_line_chart(summary_table, "strict_precision_pct", "Strict precision (%)"))
-
-    st.markdown("<div class='sajag-section-label'>FORECAST QUALITY: CONSISTENCY WITH LANDFALL ASSESSMENT</div>", unsafe_allow_html=True)
-    st.caption(
-        "Strict precision = of borrowers flagged High at this lead time, % still High at T-0h. "
-        "Strict recall = of borrowers who end up High at T-0h, % already High at this lead time. "
-        "Lenient recall = of borrowers who end up High at T-0h, % already High-or-Medium at this lead time."
-    )
-    st.dataframe(_forecast_quality_table(load_countdown()), hide_index=True, width="stretch")
+        st.caption(
+            "Strict precision = of borrowers flagged High at this lead time, % still High at T-0h. "
+            "Strict recall = of borrowers who end up High at T-0h, % already High at this lead time. "
+            "Lenient recall = of borrowers who end up High at T-0h, % already High-or-Medium at this lead time."
+        )
+        st.dataframe(_forecast_quality_table(load_countdown()), hide_index=True, width="stretch")
 
 
 def _subdivision_outline_geojson(districts):
@@ -1788,7 +2098,7 @@ def _render_act_branch_table(branch_table):
 def render_legend():
     st.markdown("**Legend**")
     for tier in TIER_ORDER:
-        color = TIER_COLORS[tier]
+        color = RISK_PALETTE[tier]
         label = TIER_LABELS[tier]
         st.markdown(
             f'<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">'
@@ -1843,11 +2153,11 @@ def _add_tier_marker(m, lat, lon, tier, radius, tooltip, popup_html=None):
     """A village/borrower marker in its tier color. High-tier markers get a
     soft halo (a larger, low-opacity circle underneath) - the one place
     glow/decoration is allowed, so the highest-risk markers visually pop."""
-    color = TIER_COLORS.get(tier, TIER_COLORS["not_exposed"])
+    color = RISK_PALETTE.get(tier, RISK_PALETTE["not_exposed"])
     if tier == "high":
         folium.CircleMarker(
             location=[lat, lon], radius=radius * 1.8, color=color, weight=0,
-            fill=True, fill_color=color, fill_opacity=0.09,
+            fill=True, fill_color=color, fill_opacity=0.06,
         ).add_to(m)
     popup = folium.Popup(popup_html, max_width=260) if popup_html else None
     fill_opacity = 0.82 if tier == "high" else (0.76 if tier == "medium" else 0.5)
@@ -1903,19 +2213,70 @@ def _resolve_map_click(map_state, df):
     return None
 
 
+def _render_priority_overview(df, weights):
+    counts = df["tier"].value_counts()
+    tier_rows = []
+    meter = []
+    for tier in TIER_ORDER:
+        count = int(counts.get(tier, 0))
+        label = TIER_LABELS.get(tier, tier)
+        tier_rows.append(
+            f"<div class='sajag-priority-count sajag-priority-count--{tier}'>"
+            f"<div class='sajag-priority-value'>{count:,}</div>"
+            f"<div class='sajag-priority-label'>{html.escape(label)}</div></div>"
+        )
+        percentage = count / len(df) * 100 if len(df) else 0
+        meter.append(
+            f"<span style='width:{percentage:.2f}%;background:{RISK_PALETTE[tier]}' "
+            f"title='{html.escape(label)}: {count:,}'></span>"
+        )
+
+    driver_labels = (
+        ("Exposure", "exposure"),
+        ("Livelihood vulnerability", "vulnerability"),
+        ("Repayment stress", "stress"),
+    )
+    drivers = "".join(
+        f"<div class='sajag-priority-driver'><span>{label}</span>"
+        f"<strong>{weights[key] * 100:.0f}% weight</strong></div>"
+        for label, key in driver_labels
+    )
+    st.markdown(
+        f"<div class='sajag-priority-overview'>"
+        f"<div class='sajag-priority-counts'>{''.join(tier_rows)}</div>"
+        f"<div class='sajag-priority-meter' role='img' aria-label='Risk distribution'>{''.join(meter)}</div>"
+        "<div class='sajag-priority-driver-head'>WHAT SHAPES THE PRIORITY SCORE</div>"
+        f"<div class='sajag-priority-drivers'>{drivers}</div></div>",
+        unsafe_allow_html=True,
+    )
+
+
 def render_prioritize(df, config):
     st.subheader("Prioritize")
-    weights = config["priority"]["weights"]
-    st.caption(
-        f"Borrowers are flagged by combining hazard exposure ({weights['exposure'] * 100:.0f}%), "
-        f"livelihood vulnerability ({weights['vulnerability'] * 100:.0f}%), and repayment stress "
-        f"({weights['stress'] * 100:.0f}%) into one priority score."
+    st.markdown(
+        "<p class='sajag-page-intro'>Who is at risk, and what is driving the priority?</p>",
+        unsafe_allow_html=True,
     )
+    weights = config["priority"]["weights"]
     if df.empty:
         st.info("No borrowers match the current filters.")
         return
 
+    _render_priority_overview(df, weights)
     sorted_df = df.sort_values("priority_score", ascending=False).reset_index(drop=True)
+
+    st.markdown("<div class='sajag-section-head'>BORROWER REVIEW QUEUE</div>", unsafe_allow_html=True)
+    queue_col, download_col = st.columns([1, 5], vertical_alignment="center")
+    with queue_col:
+        st.caption(f"{len(sorted_df):,} borrowers in current view")
+    with download_col:
+        csv_bytes = sorted_df.to_csv(index=False).encode("utf-8")
+        st.download_button(
+            "Download filtered queue as CSV",
+            data=csv_bytes,
+            file_name="review_queue.csv",
+            mime="text/csv",
+        )
 
     display = pd.DataFrame(
         {
@@ -1942,62 +2303,70 @@ def render_prioritize(df, config):
         },
     )
 
-    csv_bytes = sorted_df.to_csv(index=False).encode("utf-8")
-    st.download_button("Download filtered queue as CSV", data=csv_bytes, file_name="review_queue.csv", mime="text/csv")
-
     selected_row = None
     village_proxy = None
     selected_rows = event.selection.rows if event is not None else []
     if selected_rows:
         selected_row = sorted_df.iloc[selected_rows[0]]
 
-    st.markdown("<div class='sajag-section-label'>MAP</div>", unsafe_allow_html=True)
-    lead, scenario = current_lead_and_scenario()
-    show_individual = st.checkbox("Show individual borrowers")
-    if show_individual and len(df) > MAP_INDIVIDUAL_BORROWER_CAP:
-        st.caption(
-            f"Narrow the filters to {MAP_INDIVIDUAL_BORROWER_CAP:,} borrowers or fewer to show individual "
-            f"markers (currently {len(df):,}). Showing village-level markers instead."
-        )
-        show_individual = False
+    map_state = None
+    with st.expander("Spatial exposure and borrower map", expanded=False):
+        lead, scenario = current_lead_and_scenario()
+        show_individual = st.checkbox("Show individual borrowers")
+        if show_individual and len(df) > MAP_INDIVIDUAL_BORROWER_CAP:
+            st.caption(
+                f"Narrow the filters to {MAP_INDIVIDUAL_BORROWER_CAP:,} borrowers or fewer to show individual "
+                f"markers (currently {len(df):,}). Showing village-level markers instead."
+            )
+            show_individual = False
 
-    m = _folium_base_map()
-    districts = sorted(df["district"].unique())
-    folium.GeoJson(_subdivision_outline_geojson(districts), style_function=_geojson_style_fn(MUTED, weight=1)).add_to(m)
-    folium.GeoJson(
-        _exposure_zone_geojson("medium"), style_function=_geojson_style_fn(TIER_COLORS["medium"], fill=True, fill_opacity=0.2)
-    ).add_to(m)
-    folium.GeoJson(
-        _exposure_zone_geojson("high"), style_function=_geojson_style_fn(TIER_COLORS["high"], fill=True, fill_opacity=0.22)
-    ).add_to(m)
-    _add_countdown_track_layers(m, lead, scenario)
-
-    if show_individual:
-        jitter = _borrower_jitter_offsets(tuple(sorted(df["borrower_id"])))
-        for row in _borrower_jittered_points(df, jitter).itertuples():
-            _add_tier_marker(m, row.lat, row.lon, row.tier, 5, row.borrower_id, _borrower_popup_html(row._asdict()))
-    else:
-        village_df = _village_agg(df)
-        max_outstanding = village_df["outstanding"].max() or 1
-        for row in village_df.itertuples():
-            tier = "high" if row.high_count > 0 else ("medium" if row.medium_count > 0 else "low")
-            radius = 6 + 12 * (row.outstanding / max_outstanding) ** 0.5
-            _add_tier_marker(m, row.lat, row.lon, tier, radius, f"Village {row.village_id}", row.tooltip)
-
-    branch_df = _branch_agg(df)
-    for row in branch_df.itertuples():
-        folium.Marker(
-            location=[row.lat, row.lon],
-            icon=folium.DivIcon(html=f'<div style="color:{TEXT};font-size:16px;font-weight:700;">^</div>'),
-            tooltip=f"Branch {row.branch_id}",
-            popup=folium.Popup(row.tooltip, max_width=260),
+        m = _folium_base_map()
+        districts = sorted(df["district"].unique())
+        folium.GeoJson(
+            _subdivision_outline_geojson(districts),
+            style_function=_geojson_style_fn(MUTED, weight=1),
         ).add_to(m)
+        folium.GeoJson(
+            _exposure_zone_geojson("medium"),
+            style_function=_geojson_style_fn(RISK_PALETTE["medium"], fill=True, fill_opacity=0.12),
+        ).add_to(m)
+        folium.GeoJson(
+            _exposure_zone_geojson("high"),
+            style_function=_geojson_style_fn(RISK_PALETTE["high"], fill=True, fill_opacity=0.14),
+        ).add_to(m)
+        _add_countdown_track_layers(m, lead, scenario)
 
-    map_col, legend_col = st.columns([6, 1])
-    with map_col:
-        map_state = st_folium(m, height=560, use_container_width=True, returned_objects=["last_object_clicked_tooltip"])
-    with legend_col:
-        render_legend()
+        if show_individual:
+            jitter = _borrower_jitter_offsets(tuple(sorted(df["borrower_id"])))
+            for row in _borrower_jittered_points(df, jitter).itertuples():
+                _add_tier_marker(m, row.lat, row.lon, row.tier, 5, row.borrower_id, _borrower_popup_html(row._asdict()))
+        else:
+            village_df = _village_agg(df)
+            max_outstanding = village_df["outstanding"].max() or 1
+            for row in village_df.itertuples():
+                tier = "high" if row.high_count > 0 else ("medium" if row.medium_count > 0 else "low")
+                radius = 6 + 12 * (row.outstanding / max_outstanding) ** 0.5
+                _add_tier_marker(m, row.lat, row.lon, tier, radius, f"Village {row.village_id}", row.tooltip)
+
+        branch_df = _branch_agg(df)
+        for row in branch_df.itertuples():
+            folium.Marker(
+                location=[row.lat, row.lon],
+                icon=folium.DivIcon(html=f'<div style="color:{TEXT};font-size:16px;font-weight:700;">^</div>'),
+                tooltip=f"Branch {row.branch_id}",
+                popup=folium.Popup(row.tooltip, max_width=260),
+            ).add_to(m)
+
+        map_col, legend_col = st.columns([6, 1])
+        with map_col:
+            map_state = st_folium(
+                m,
+                height=500,
+                use_container_width=True,
+                returned_objects=["last_object_clicked_tooltip"],
+            )
+        with legend_col:
+            render_legend()
 
     click_result = _resolve_map_click(map_state, df)
     if click_result is not None:
@@ -2047,10 +2416,10 @@ def _render_sense_map(joined_df, lead, scenario, map_key):
     districts = sorted(joined_df["district"].unique())
     folium.GeoJson(_subdivision_outline_geojson(districts), style_function=_geojson_style_fn(MUTED, weight=1)).add_to(m)
     folium.GeoJson(
-        _exposure_zone_geojson("medium"), style_function=_geojson_style_fn(TIER_COLORS["medium"], fill=True, fill_opacity=0.2)
+        _exposure_zone_geojson("medium"), style_function=_geojson_style_fn(RISK_PALETTE["medium"], fill=True, fill_opacity=0.12)
     ).add_to(m)
     folium.GeoJson(
-        _exposure_zone_geojson("high"), style_function=_geojson_style_fn(TIER_COLORS["high"], fill=True, fill_opacity=0.22)
+        _exposure_zone_geojson("high"), style_function=_geojson_style_fn(RISK_PALETTE["high"], fill=True, fill_opacity=0.14)
     ).add_to(m)
     _add_countdown_track_layers(m, lead, scenario)
 
@@ -2121,6 +2490,11 @@ def _render_sense_frame(lead, scenario, config, landfall_time):
 def render_sense(config, play_container=st):
     landfall_time = _landfall_time()
     current_lead, current_scenario = current_lead_and_scenario()
+    st.subheader("Sense")
+    st.markdown(
+        "<p class='sajag-page-intro'>Hazard position, forecast uncertainty, and borrower exposure for the selected scenario.</p>",
+        unsafe_allow_html=True,
+    )
     play_clicked = play_container.button("▶ Play")
 
     placeholder = st.empty()
@@ -2295,27 +2669,32 @@ def _render_field_plan_content(df, config):
         st.caption("No urgent (high-priority) borrowers at this branch under the current filters.")
         return
 
-    filter_col1, filter_col2, filter_col3 = st.columns([1.4, 1, 1])
+    filter_col1, filter_tools = st.columns([1.4, 3.6])
     with filter_col1:
         borrower_query = st.text_input(
             "Search borrowers",
             placeholder="Borrower ID, village, or occupation",
             key=f"act_borrower_search_{branch_id}",
         ).strip()
-    with filter_col2:
-        village_filter = st.selectbox(
-            "Village",
-            ["All"] + sorted(urgent_df["subdivision"].dropna().unique().tolist()),
-            key=f"act_borrower_village_{branch_id}",
-        )
-    with filter_col3:
-        occupation_filter = st.selectbox(
-            "Occupation",
-            ["All"] + sorted(
-                urgent_df["occupation"].map(lambda value: OCCUPATION_LABELS.get(value, value)).dropna().unique().tolist()
-            ),
-            key=f"act_borrower_occupation_{branch_id}",
-        )
+    with filter_tools:
+        with st.expander("Filters", expanded=False):
+            village_col, occupation_col = st.columns(2)
+            with village_col:
+                village_filter = st.selectbox(
+                    "Village",
+                    ["All"] + sorted(urgent_df["subdivision"].dropna().unique().tolist()),
+                    key=f"act_borrower_village_{branch_id}",
+                )
+            with occupation_col:
+                occupation_filter = st.selectbox(
+                    "Occupation",
+                    ["All"] + sorted(
+                        urgent_df["occupation"].map(
+                            lambda value: OCCUPATION_LABELS.get(value, value)
+                        ).dropna().unique().tolist()
+                    ),
+                    key=f"act_borrower_occupation_{branch_id}",
+                )
 
     visible_urgent_df = urgent_df
     if borrower_query:
@@ -2434,14 +2813,8 @@ def _landing_geometry():
     return {"coast_path": coast_path, "track": track, "villages": village_list}
 
 
-def _landing_hero_html(geometry, stats, animate=True):
-    """Self-contained HTML/SVG/CSS hero. Entrance sequence (~2.7s, plays once):
-    map fades in and settles from a slight zoom, the track traces itself with
-    the cyclone glyph riding its tip, village dots reveal in staggered groups
-    (high, then medium), then the counters count up (_LANDING_COUNTUP_JS).
-    Every animation runs *from* an offset *to* the element's base style, so
-    with animations off (animate=False, or prefers-reduced-motion) the hero
-    shows the identical final state immediately."""
+def _landing_hero_html(geometry, stats):
+    """Build the landing hero as a static inline SVG with its final values."""
     coast_path = geometry["coast_path"]
     track_pts = geometry["track"]
     track_path_d = ("M " + " L ".join(f"{p['x']:.1f},{p['y']:.1f}" for p in track_pts)) if track_pts else ""
@@ -2449,6 +2822,7 @@ def _landing_hero_html(geometry, stats, animate=True):
     track_len = sum(
         float(np.hypot(b["x"] - a["x"], b["y"] - a["y"])) for a, b in zip(track_pts, track_pts[1:])
     ) + 1
+    cyclone_tip = track_pts[-1] if track_pts else {"x": 0, "y": 0}
 
     # Reveal order only (positions/tiers untouched): within each tier, nearest-to-track
     # first, in groups of 6. (start, max stagger) per tier, in seconds.
@@ -2467,7 +2841,7 @@ def _landing_hero_html(geometry, stats, animate=True):
     screened, flagged72, confirmed0 = stats
 
     return f"""
-    <div class="sajag-hero-wrap{'' if animate else ' sajag-hero-static'}">
+    <div class="sajag-hero-wrap sajag-hero-static">
       <style>
         .sajag-hero-wrap {{
           width: 100%; background: {BG}; container-type: inline-size;
@@ -2503,9 +2877,9 @@ def _landing_hero_html(geometry, stats, animate=True):
           fill: var(--tc, #3A4653); transform-box: fill-box; transform-origin: center;
           animation: sajag-dot-in 0.4s cubic-bezier(.2,.7,.3,1) backwards, sajag-dot-color 0.5s ease backwards;
         }}
-        .sajag-vdot[data-tier="high"] {{ --tc:{TIER_COLORS['high']}; }}
-        .sajag-vdot[data-tier="medium"] {{ --tc:{TIER_COLORS['medium']}; }}
-        .sajag-vdot[data-tier="low"] {{ --tc:{TIER_COLORS['low']}; }}
+        .sajag-vdot[data-tier="high"] {{ --tc:{RISK_PALETTE['high']}; }}
+        .sajag-vdot[data-tier="medium"] {{ --tc:{RISK_PALETTE['medium']}; }}
+        .sajag-vdot[data-tier="low"] {{ --tc:{RISK_PALETTE['low']}; }}
         .sajag-counter-value {{ animation: sajag-from-transparent 0.3s ease 1.7s backwards; }}
         @keyframes sajag-from-transparent {{ from {{ opacity:0; }} }}
         @keyframes sajag-map-settle {{ from {{ transform: scale(1.06); }} to {{ transform: scale(1); }} }}
@@ -2558,9 +2932,6 @@ def _landing_hero_html(geometry, stats, animate=True):
           .sajag-hero-wrap * {{ animation: none !important; }}
         }}
         .sajag-hero-static * {{ animation: none !important; }}
-        @media (prefers-reduced-motion: no-preference) {{
-          .sajag-hero-static .sajag-cyclone {{ animation: sajag-spin 2.6s linear infinite !important; }}
-        }}
       </style>
       <div class="sajag-hero-stage">
       <div class="sajag-hero-bg"></div>
@@ -2569,10 +2940,9 @@ def _landing_hero_html(geometry, stats, animate=True):
         <path class="sajag-cone" d="{track_path_d}"></path>
         <path class="sajag-track" d="{track_path_d}"></path>
         {villages_html}
-        <g class="sajag-cyclone">
+        <g class="sajag-cyclone" transform="translate({cyclone_tip['x']:.1f} {cyclone_tip['y']:.1f})">
           <circle cx="0" cy="0" r="7" fill="none" stroke="{TEXT}" stroke-width="1.4"></circle>
           <path d="M -7 0 A 7 7 0 0 1 0 -7" fill="none" stroke="{ACCENT}" stroke-width="1.6"></path>
-          <animateMotion dur="1.5s" begin="0.6s" fill="freeze" calcMode="spline" keyTimes="0;1" keyPoints="0;1" keySplines=".45 0 .25 1" path="{track_path_d}"></animateMotion>
         </g>
       </svg>
       <div class="sajag-hero-text">
@@ -2589,55 +2959,14 @@ def _landing_hero_html(geometry, stats, animate=True):
     """
 
 
-# Count-up for the hero counters (starts at 1.7s, after the dots). They already hold
-# their final values, so if this never runs nothing is wrong; it polls briefly
-# because the hero markdown may land in the DOM just after this script executes.
-_LANDING_COUNTUP_JS = """<script>
-(function () {
-  var tries = 0;
-  (function waitForHero() {
-    var wrap = document.querySelector('.sajag-hero-wrap');
-    if (!wrap) { if (++tries < 40) setTimeout(waitForHero, 50); return; }
-    var still = wrap.classList.contains('sajag-hero-static') ||
-                window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (still) {
-      // The glyph's SMIL motion ignores CSS; jump its timeline to the end state.
-      var svg = wrap.querySelector('svg');
-      if (svg && svg.setCurrentTime) svg.setCurrentTime(60);
-      return;
-    }
-    if (wrap.hasAttribute('data-counted')) return;
-    wrap.setAttribute('data-counted', '1');
-    var els = wrap.querySelectorAll('.sajag-counter-value');
-    els.forEach(function (el) { el.textContent = '0'; });
-    setTimeout(function () {
-      els.forEach(function (el) {
-        var target = parseInt(el.getAttribute('data-target'), 10) || 0;
-        var t0 = null, duration = 1000;
-        function step(ts) {
-          if (t0 === null) t0 = ts;
-          var p = Math.min((ts - t0) / duration, 1);
-          var eased = 1 - Math.pow(1 - p, 3);
-          el.textContent = (p < 1 ? Math.round(eased * target) : target).toLocaleString('en-US');
-          if (p < 1) requestAnimationFrame(step);
-        }
-        requestAnimationFrame(step);
-      });
-    }, 1700);
-  })();
-})();
-</script>"""
-
-
 # Stage colours: one coral family, a subtle step darker per stage.
-LANDING_FUNNEL_COLORS = ["#EF4444", "#E5484D", "#D94A50", "#CF4A50", "#C5484F"]
+LANDING_FUNNEL_COLORS = ["#563138", "#503039", "#492F38", "#432D37", "#3D2B35"]
 
 
-def _landing_funnel_html(rows, animate=True):
+def _landing_funnel_html(rows):
     """Landing "How the list narrows" funnel as plain HTML/CSS: label | bar | spacer
     per stage, bar width proportional to the High-tier count, thin trapezoid
-    connectors between stages. Values come straight from `rows` and are
-    pre-filled (the count-up only animates towards them)."""
+    connectors between stages. Values come straight from `rows`."""
     max_v = max(v for _, v, _ in rows) or 1
     widths = [v / max_v * 100 for _, v, _ in rows]
     colors = [LANDING_FUNNEL_COLORS[min(i, len(LANDING_FUNNEL_COLORS) - 1)] for i in range(len(rows))]
@@ -2648,7 +2977,7 @@ def _landing_funnel_html(rows, animate=True):
             f'<div class="sajag-fstage" style="--i:{i}; --w:{widths[i]:.2f}%; --c:{colors[i]};">'
             f'<div class="sajag-flabel"><span class="sajag-fidx">{i + 1:02d}</span><span class="sajag-ftime">{shown}</span></div>'
             f'<div class="sajag-ftrack"><div class="sajag-fbar">'
-            f'<span class="sajag-fnum" data-target="{v}">{v:,}</span><span class="sajag-fprec">{prec:.0f}% precision</span>'
+            f'<span class="sajag-fnum">{v:,}</span><span class="sajag-fprec">{prec:.0f}% precision</span>'
             f'</div></div><div></div></div>'
         )
         if i + 1 < len(rows):
@@ -2660,50 +2989,7 @@ def _landing_funnel_html(rows, animate=True):
                 f'<div></div><div></div><div></div></div>'
             )
     summary = "; ".join(f"{label} {v:,} borrowers, {prec:.0f}% precision" for label, v, prec in rows)
-    cls = "sajag-funnel" + ("" if animate else " sajag-funnel--static")
-    return f'<div class="{cls}" role="img" aria-label="High-tier list by lead time: {summary}">{"".join(parts)}</div>'
-
-
-# Funnel entrance: stages fade/expand in order and counts tick up once the funnel
-# scrolls into view. Skipped for reduced motion and repeat renders; numbers are
-# pre-filled, so if this never runs the funnel is simply shown in its final state.
-_LANDING_FUNNEL_JS = """<script>
-(function () {
-  var tries = 0;
-  (function waitForFunnel() {
-    var f = document.querySelector('.sajag-funnel');
-    if (!f) { if (++tries < 60) setTimeout(waitForFunnel, 50); return; }
-    if (f.classList.contains('sajag-funnel--static') || f.hasAttribute('data-armed') ||
-        window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    f.setAttribute('data-armed', '1');
-    f.classList.add('is-armed');
-    function go() {
-      f.classList.remove('is-armed');
-      f.classList.add('is-in');
-      f.querySelectorAll('.sajag-fnum').forEach(function (el, i) {
-        var target = parseInt(el.getAttribute('data-target'), 10) || 0;
-        el.textContent = '0';
-        setTimeout(function () {
-          var t0 = null;
-          function step(ts) {
-            if (t0 === null) t0 = ts;
-            var p = Math.min((ts - t0) / 700, 1);
-            var eased = 1 - Math.pow(1 - p, 3);
-            el.textContent = (p < 1 ? Math.round(eased * target) : target).toLocaleString('en-US');
-            if (p < 1) requestAnimationFrame(step);
-          }
-          requestAnimationFrame(step);
-        }, i * 110);
-      });
-    }
-    if (!('IntersectionObserver' in window)) { go(); return; }
-    var io = new IntersectionObserver(function (entries) {
-      if (entries.some(function (e) { return e.isIntersecting; })) { io.disconnect(); go(); }
-    }, {threshold: 0.25});
-    io.observe(f);
-  })();
-})();
-</script>"""
+    return f'<div class="sajag-funnel" role="img" aria-label="High-tier list by lead time: {summary}">{"".join(parts)}</div>'
 
 
 def render_landing(config):
@@ -2717,28 +3003,18 @@ def render_landing(config):
     # Rendered inline (not in an iframe) so its height follows its responsive width
     # naturally. st.markdown keeps the SVG (st.html strips it); lines are stripped so
     # markdown doesn't read indented HTML as a code block.
-    # Entrance plays on the first landing render of a session only; later renders
-    # (e.g. back from the dashboard) show the identical final state immediately.
-    animate = not st.session_state.get("landing_intro_played", False)
-    st.session_state["landing_intro_played"] = True
-    hero_html = _landing_hero_html(geometry, (screened, flagged72, confirmed0), animate=animate)
+    # Render the complete final state immediately; the visualization is
+    # informative without an entrance sequence or delayed counter updates.
+    hero_html = _landing_hero_html(geometry, (screened, flagged72, confirmed0))
     with st.container(key="sajag_landing_hero", gap=None):
         st.markdown(" ".join(line.strip() for line in hero_html.splitlines()), unsafe_allow_html=True)
-        st.html(_LANDING_COUNTUP_JS, unsafe_allow_javascript=True)
-
-    st.markdown(
-        f"<p class='sajag-hero-summary'>Cyclone Fani replay: {screened:,} borrowers screened &middot; "
-        f"{flagged72:,} flagged at T&minus;72h &middot; {confirmed0:,} confirmed high-risk at landfall.</p>",
-        unsafe_allow_html=True,
-    )
 
     summary_table = summarize_countdown(load_countdown())
     funnel_rows = _precision_funnel_rows(summary_table, scenario="inland")
     if funnel_rows:
         st.markdown("<div class='sajag-landing-head'>HOW THE LIST NARROWS</div>", unsafe_allow_html=True)
         with st.container(key="sajag_landing_funnel", gap=None):
-            st.markdown(_landing_funnel_html(funnel_rows, animate=animate), unsafe_allow_html=True)
-            st.html(_LANDING_FUNNEL_JS, unsafe_allow_javascript=True)
+            st.markdown(_landing_funnel_html(funnel_rows), unsafe_allow_html=True)
 
     st.markdown("<div class='sajag-landing-head sajag-landing-head--divided'>HOW IT WORKS</div>", unsafe_allow_html=True)
     steps = [
@@ -2832,7 +3108,7 @@ def _render_step_nav():
     route = st.session_state["route"]
     steps = [("01  SENSE", "sense"), ("02  PRIORITIZE", "prioritize"), ("03  ACT", "act"), ("04  MEASURE", "measure")]
     with st.container(key="sajag_step_nav"):
-        cols = st.columns([1, 1.3, 1, 1.2, 4])
+        cols = st.columns([1, 1.3, 1, 1.2])
         for col, (label, key) in zip(cols, steps):
             with col:
                 if st.button(label, key=f"nav_{key}", type="primary" if route == key else "secondary", width="stretch"):
