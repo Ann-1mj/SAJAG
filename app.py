@@ -19,7 +19,6 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
-import streamlit.components.v1 as components
 from shapely.geometry import LineString, Point
 from streamlit_folium import st_folium
 
@@ -71,6 +70,15 @@ ACCENT = "#4CC3D9"
 DIVIDER = "#232E3A"
 GRID = "#232E3A"
 
+# Landing-page refinement (landing only; the dashboard keeps the tokens above).
+LANDING_BG = "#0B1219"
+LANDING_SURFACE = "#111B24"
+LANDING_BORDER = "#263541"
+LANDING_TEXT = "#E8EEF3"
+LANDING_MUTED = "#8295A8"
+LANDING_CYAN = "#35C5E5"
+LANDING_RED = "#E84B52"
+
 COUNTDOWN_SCENARIO_LABELS = {"Inland": "inland", "Seaward": "seaward", "Forecast missed": "forecast_miss"}
 COUNTDOWN_LINE_STYLE = {
     "inland": (ACCENT, "Inland"),
@@ -100,6 +108,22 @@ def inject_custom_css():
         html, body, [class*="css"] {{
             font-family: "IBM Plex Sans", sans-serif;
         }}
+        .stApp [data-testid="stAppViewContainer"] *,
+        .stApp [data-testid="stSidebar"] * {{
+            caret-color: transparent;
+        }}
+        .stApp [data-testid="stAppViewContainer"] input,
+        .stApp [data-testid="stAppViewContainer"] textarea,
+        .stApp [data-testid="stAppViewContainer"] select,
+        .stApp [data-testid="stAppViewContainer"] [contenteditable="true"],
+        .stApp [data-testid="stAppViewContainer"] [role="textbox"],
+        .stApp [data-testid="stSidebar"] input,
+        .stApp [data-testid="stSidebar"] textarea,
+        .stApp [data-testid="stSidebar"] select,
+        .stApp [data-testid="stSidebar"] [contenteditable="true"],
+        .stApp [data-testid="stSidebar"] [role="textbox"] {{
+            caret-color: auto;
+        }}
 
         #MainMenu, footer, [data-testid="stToolbar"], [data-testid="stDecoration"],
         [data-testid="stSidebarCollapsedControl"] {{
@@ -110,6 +134,18 @@ def inject_custom_css():
             padding-top: 0.6rem;
             padding-bottom: 2rem;
             max-width: 1400px;
+        }}
+        /* Landing: container grows with the viewport (same 1400px at a ~1920px
+           window) so zooming out widens the layout instead of leaving a fixed
+           1400px column in the middle of a larger screen. */
+        div.block-container:has([class*="st-key-sajag_landing_cta"]) {{
+            max-width: clamp(1400px, 73vw, 2400px);
+        }}
+        /* App pages (not landing): one shared content container for header, nav,
+           controls, KPIs, map panel and tables. */
+        div.block-container:has([class*="st-key-sajag_topbar"]) {{
+            max-width: 1680px;
+            padding-left: clamp(1rem, 3vw, 3rem); padding-right: clamp(1rem, 3vw, 3rem);
         }}
 
         [data-testid="stMetricValue"], [data-testid="stDataFrame"], .sajag-mono {{
@@ -125,35 +161,178 @@ def inject_custom_css():
         /* Top bar */
         [class*="st-key-sajag_topbar"] {{
             border-bottom: 1px solid {DIVIDER};
-            padding-bottom: 8px; margin-bottom: 4px;
-            background-image: repeating-radial-gradient(circle at 92% -30%, rgba(76,195,217,0.06) 0, rgba(76,195,217,0.06) 1px, transparent 1px, transparent 42px);
+            padding: 6px 0 4px 0; margin-bottom: 4px; gap: 22px;
+            background-image: repeating-radial-gradient(circle at 92% -30%, rgba(76,195,217,0.05) 0, rgba(76,195,217,0.05) 1px, transparent 1px, transparent 42px);
         }}
+        /* Header: 1fr | auto | 1fr grid. The right track stays empty so the
+           centre zone sits on the true horizontal centre. Tops are aligned so
+           T-Xh reads on the same line as the SAJAG wordmark. */
+        [class*="st-key-sajag_header"] {{ padding: 14px 0 0 0; }}
+        [class*="st-key-sajag_header"] [data-testid="stHorizontalBlock"] {{
+            display: grid !important;
+            grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+            align-items: center; column-gap: 56px;
+        }}
+        [class*="st-key-sajag_header"] [data-testid="stColumn"],
+        [class*="st-key-sajag_row2"] [data-testid="stColumn"] {{
+            width: auto !important; min-width: 0 !important; flex: none !important;
+        }}
+
+        /* Row 2: compact vertical control on the left, timeline takes the rest */
+        [class*="st-key-sajag_row2"] {{ padding: 6px 0 14px 0; }}
+        [class*="st-key-sajag_row2"] [data-testid="stHorizontalBlock"]:has([class*="st-key-sajag_timeline"]) {{
+            display: grid !important;
+            grid-template-columns: auto minmax(0, 1fr);
+            align-items: center; column-gap: 72px;
+        }}
+
+        .sajag-brand {{ display: flex; flex-direction: column; gap: 8px; }}
+        [class*="st-key-sajag_header"] [data-testid="stVerticalBlock"] {{ gap: 8px; }}
+
+        /* Clickable wordmark (st.button styled to match .sajag-wordmark) */
+        .st-key-brand_home button {{
+            background: transparent !important; border: none !important; box-shadow: none !important;
+            padding: 0 !important; min-height: 0 !important; justify-content: flex-start;
+            cursor: pointer; transition: opacity 150ms ease;
+        }}
+        .st-key-brand_home button p {{
+            font-family: "IBM Plex Mono", monospace; font-weight: 600; font-size: 1.9rem;
+            line-height: 1; letter-spacing: 0.22em; color: {TEXT};
+        }}
+        .st-key-brand_home button:hover {{ opacity: 0.75; }}
+        .st-key-brand_home button:focus-visible {{ outline: 1px solid rgba(76,195,217,0.5); outline-offset: 4px; }}
         .sajag-wordmark {{
-            font-family: "IBM Plex Mono", monospace; font-weight: 600; font-size: 1.25rem;
-            letter-spacing: 0.06em; color: {TEXT}; padding-top: 6px;
+            font-family: "IBM Plex Mono", monospace; font-weight: 600; font-size: 1.9rem;
+            line-height: 1; letter-spacing: 0.22em; color: {TEXT};
         }}
-        .sajag-event {{ color: {MUTED}; font-size: 0.85rem; padding-top: 11px; }}
+        .sajag-event {{ color: {MUTED}; font-size: 0.85rem; letter-spacing: 0; white-space: nowrap; }}
         .sajag-countdown {{
             font-family: "IBM Plex Mono", monospace; font-weight: 600; font-size: 1.5rem;
-            color: {TEXT}; padding-top: 3px;
+            color: {TEXT}; font-variant-numeric: tabular-nums;
         }}
-        .sajag-demo-label {{ color: {MUTED}; font-size: 0.7rem; text-align: right; padding-top: 12px; }}
+        /* Current-status block: compact, flat surface, no glow */
+        .sajag-status {{
+            display: flex; flex-direction: column; align-items: center;
+            padding: 12px 32px 11px 32px;
+            background: rgba(21, 29, 38, 0.6);
+            border: 1px solid rgba(138, 150, 166, 0.13); border-radius: 8px;
+        }}
+        [class*="st-key-sajag_header"] .sajag-countdown {{
+            font-size: 2.1rem; font-weight: 600; line-height: 1; letter-spacing: -0.01em; text-align: center;
+        }}
+        .sajag-status-sub {{
+            margin-top: 7px; font-size: 0.66rem; letter-spacing: 0.08em; text-transform: uppercase;
+            color: {MUTED}; white-space: nowrap;
+        }}
+        .sajag-demo-label {{
+            color: {MUTED}; font-size: 0.62rem; letter-spacing: 0.12em; text-transform: uppercase;
+            text-align: right; opacity: 0.55; padding: 2px 0 2px 0;
+        }}
 
-        [class*="st-key-sajag_topbar"] div[role="radiogroup"] {{ gap: 4px; padding-top: 2px; }}
-        [class*="st-key-sajag_topbar"] div[role="radiogroup"] label {{
-            background: {SURFACE}; border: 1px solid {DIVIDER}; border-radius: 6px;
-            padding: 2px 10px !important; margin-right: 0 !important;
+        /* Scenario segmented control */
+        [class*="st-key-sajag_topbar"] div[role="radiogroup"] {{
+            display: inline-flex; flex-direction: column; align-items: stretch; width: auto; gap: 1px; padding: 3px;
+            background: rgba(21, 29, 38, 0.5); border: 1px solid rgba(138, 150, 166, 0.12); border-radius: 7px;
         }}
+        [class*="st-key-sajag_topbar"] div[role="radiogroup"] label {{
+            display: flex; align-items: center; min-height: 26px;
+            background: transparent; border: none; border-radius: 4px;
+            padding: 0 14px !important; margin: 0 !important;
+            transition: background-color 150ms ease;
+        }}
+        [class*="st-key-sajag_topbar"] div[role="radiogroup"] label p {{
+            color: {MUTED} !important; font-size: 0.68rem; letter-spacing: 0.05em; text-transform: uppercase;
+            white-space: nowrap; transition: color 150ms ease;
+        }}
+        [class*="st-key-sajag_topbar"] div[role="radiogroup"] label:hover {{ background: rgba(255,255,255,0.025); }}
+        [class*="st-key-sajag_topbar"] div[role="radiogroup"] label:hover p {{ color: {TEXT} !important; }}
         [class*="st-key-sajag_topbar"] div[role="radiogroup"] label:has(input:checked) {{
-            border-color: {ACCENT};
+            background: rgba(76,195,217,0.08);
         }}
         [class*="st-key-sajag_topbar"] div[role="radiogroup"] label:has(input:checked) p {{
-            color: {ACCENT} !important;
+            color: {ACCENT} !important; font-weight: 500;
         }}
         [class*="st-key-sajag_topbar"] div[role="radiogroup"] label div:first-child {{ display: none; }}
 
-        /* Timeline + step-nav pills, rendered as minimal st.buttons */
-        [class*="st-key-sajag_topbar"] [data-testid="stButton"] button,
+        /* Timeline: five connected stops spanning the full content width.
+           Tracks 1fr 2fr 2fr 2fr 1fr put the stops at exactly 0/25/50/75/100%:
+           the first stop is left-aligned in its track, the last right-aligned,
+           and the middle three centred. */
+        [class*="st-key-sajag_timeline"] {{ margin-top: 4px; }}
+        [class*="st-key-sajag_timeline"] [data-testid="stHorizontalBlock"] {{
+            display: grid !important; position: relative;
+            grid-template-columns: 1fr 2fr 2fr 2fr 1fr; gap: 0 !important;
+        }}
+        [class*="st-key-sajag_timeline"] [data-testid="stColumn"] {{
+            width: auto !important; min-width: 0 !important; flex: none !important;
+        }}
+        [class*="st-key-sajag_timeline"] [data-testid="stHorizontalBlock"]::before,
+        [class*="st-key-sajag_timeline"] [data-testid="stHorizontalBlock"]::after {{
+            content: ""; position: absolute; top: 8px; left: 4px; height: 1px; pointer-events: none;
+        }}
+        [class*="st-key-sajag_timeline"] [data-testid="stHorizontalBlock"]::before {{
+            right: 4px; background: #1C252F;
+        }}
+        [class*="st-key-sajag_timeline"] [data-testid="stHorizontalBlock"]::after {{
+            width: 0; background: rgba(76,195,217,0.35); transition: width 300ms ease;
+        }}
+        [class*="st-key-sajag_timeline"]:has(.st-key-tl_48 button[kind="primary"]) [data-testid="stHorizontalBlock"]::after {{ width: 25%; }}
+        [class*="st-key-sajag_timeline"]:has(.st-key-tl_24 button[kind="primary"]) [data-testid="stHorizontalBlock"]::after {{ width: 50%; }}
+        [class*="st-key-sajag_timeline"]:has(.st-key-tl_12 button[kind="primary"]) [data-testid="stHorizontalBlock"]::after {{ width: 75%; }}
+        [class*="st-key-sajag_timeline"]:has(.st-key-tl_0 button[kind="primary"]) [data-testid="stHorizontalBlock"]::after {{ width: calc(100% - 8px); }}
+
+        [class*="st-key-sajag_timeline"] [data-testid="stButton"] button {{
+            position: relative; z-index: 1;
+            background: transparent !important; border: none !important; box-shadow: none !important;
+            border-radius: 0 !important; padding: 22px 4px 6px 4px !important; min-height: 0;
+            transition: color 150ms ease;
+        }}
+        [class*="st-key-sajag_timeline"] [data-testid="stButton"] button p {{
+            font-family: "IBM Plex Mono", monospace; font-size: 0.74rem; letter-spacing: 0.02em;
+            color: #6F7B8B; transition: color 150ms ease;
+        }}
+        [class*="st-key-sajag_timeline"] [data-testid="stButton"] button::before {{
+            content: ""; position: absolute; top: 4px; left: 50%; transform: translateX(-50%);
+            width: 9px; height: 9px; border-radius: 50%; box-sizing: border-box;
+            background: {BG}; border: 1px solid #2E3A47;
+            transition: border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease;
+        }}
+        [class*="st-key-sajag_timeline"] [data-testid="stButton"] button:hover p {{ color: {TEXT}; }}
+        [class*="st-key-sajag_timeline"] [data-testid="stButton"] button:hover::before {{ border-color: {MUTED}; }}
+
+        [class*="st-key-sajag_timeline"] [data-testid="stButton"] button[kind="primary"] p {{
+            color: {ACCENT}; font-weight: 600;
+        }}
+        [class*="st-key-sajag_timeline"] [data-testid="stButton"] button[kind="primary"]::before {{
+            background: {ACCENT}; border-color: {ACCENT};
+            box-shadow: 0 0 0 3px rgba(76,195,217,0.14);
+        }}
+
+        /* LANDFALL endpoint: diamond marker, visible but secondary */
+        [class*="st-key-sajag_timeline"] .st-key-tl_0 [data-testid="stButton"] button p {{
+            letter-spacing: 0.08em; font-weight: 500; color: {MUTED};
+        }}
+        [class*="st-key-sajag_timeline"] .st-key-tl_0 [data-testid="stButton"] button::before {{
+            width: 10px; height: 10px; border-radius: 1px; top: 3px;
+            transform: translateX(-50%) rotate(45deg); border-color: #5C6878;
+        }}
+        [class*="st-key-sajag_timeline"] .st-key-tl_0 [data-testid="stButton"] button[kind="primary"] p {{ color: {ACCENT}; }}
+
+        /* End stops sit flush with the content edges */
+        [class*="st-key-sajag_timeline"] .st-key-tl_72 [data-testid="stButton"] button {{
+            justify-content: flex-start; padding-left: 0 !important;
+        }}
+        [class*="st-key-sajag_timeline"] .st-key-tl_72 [data-testid="stButton"] button::before {{
+            left: 0; transform: none;
+        }}
+        [class*="st-key-sajag_timeline"] .st-key-tl_0 [data-testid="stButton"] button {{
+            justify-content: flex-end; padding-right: 0 !important;
+        }}
+        [class*="st-key-sajag_timeline"] .st-key-tl_0 [data-testid="stButton"] button::before {{
+            left: auto; right: 1px; transform: rotate(45deg);
+        }}
+
+        /* Step-nav pills, rendered as minimal st.buttons */
         [class*="st-key-sajag_step_nav"] [data-testid="stButton"] button {{
             background: transparent !important; border: none !important; color: {MUTED} !important;
             font-family: "IBM Plex Mono", monospace; font-size: 0.78rem;
@@ -164,11 +343,9 @@ def inject_custom_css():
             font-family: "IBM Plex Sans", sans-serif; font-size: 0.82rem; font-weight: 600;
             letter-spacing: 0.03em; justify-content: flex-start;
         }}
-        [class*="st-key-sajag_topbar"] [data-testid="stButton"] button[kind="primary"],
         [class*="st-key-sajag_step_nav"] [data-testid="stButton"] button[kind="primary"] {{
             color: {ACCENT} !important; border-bottom: 2px solid {ACCENT} !important;
         }}
-        [class*="st-key-sajag_topbar"] [data-testid="stButton"] button:hover,
         [class*="st-key-sajag_step_nav"] [data-testid="stButton"] button:hover {{
             color: {ACCENT} !important;
         }}
@@ -180,6 +357,94 @@ def inject_custom_css():
             margin: 18px 0 8px 0;
         }}
         .sajag-divider {{ border-top: 1px solid {DIVIDER}; margin: 20px 0; }}
+
+        /* Filters + Play: one compact row (filters fill, Play hugs the right) */
+        [class*="st-key-sajag_controls"] {{ margin-bottom: 8px; }}
+        [class*="st-key-sajag_controls"] [data-testid="stHorizontalBlock"]:has([data-testid="stExpander"]) {{
+            display: grid !important; grid-template-columns: minmax(0, 1fr) auto;
+            align-items: start; column-gap: 12px;
+        }}
+        [class*="st-key-sajag_controls"] [data-testid="stColumn"]:not([data-testid="stExpander"] *) {{
+            width: auto !important; min-width: 0 !important; flex: none !important;
+        }}
+        [class*="st-key-sajag_controls"] [data-testid="stExpander"] summary {{
+            padding-top: 8px; padding-bottom: 8px; font-size: 0.85rem; color: {MUTED};
+        }}
+        [class*="st-key-sajag_controls"] [data-testid="stExpander"] summary:hover {{ color: {TEXT}; }}
+        [class*="st-key-sajag_controls"] [data-testid="stButton"] button {{
+            min-height: 0; padding: 8px 18px; border-radius: 8px;
+            background: transparent; border: 1px solid {DIVIDER}; color: {TEXT}; font-size: 0.85rem;
+            transition: border-color 150ms ease, color 150ms ease;
+        }}
+        [class*="st-key-sajag_controls"] [data-testid="stButton"] button:hover {{
+            border-color: rgba(76,195,217,0.45); color: {ACCENT};
+        }}
+
+        /* Map + ranking: one information panel */
+        [class*="st-key-sajag_risk_panel"] {{
+            border: 1px solid rgba(138,150,166,0.12); border-radius: 8px;
+            padding: 18px 20px 12px 20px; margin-bottom: 24px;
+        }}
+        .sajag-panel-head {{
+            display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+            min-height: 20px; margin-bottom: 4px;
+        }}
+        .sajag-panel-head .sajag-section-label {{ margin: 0; }}
+        .sajag-panel-context {{ color: {MUTED}; font-size: 0.75rem; white-space: nowrap; }}
+        .sajag-panel-context .sajag-mono {{ color: {TEXT}; font-weight: 600; }}
+
+        /* Section heading with hairline divider (Next Actions) */
+        .sajag-section-head {{
+            font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: {MUTED};
+            padding-bottom: 8px; border-bottom: 1px solid {DIVIDER}; margin: 0 0 4px 0;
+        }}
+
+        /* KPI cards */
+        .sajag-kpi-row {{
+            display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 16px; margin: 4px 0 24px 0;
+        }}
+        @media (max-width: 720px) {{
+            .sajag-kpi-row {{ grid-template-columns: minmax(0, 1fr); }}
+        }}
+        .sajag-kpi {{
+            position: relative; overflow: hidden;
+            background: {SURFACE};
+            border: 1px solid rgba(138, 150, 166, 0.14);
+            border-radius: 8px;
+            padding: 18px 22px 16px 22px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 6px 16px rgba(0, 0, 0, 0.18);
+            animation: sajag-kpi-in 360ms ease-out both;
+        }}
+        /* Hairline accent along the top edge */
+        .sajag-kpi::before {{
+            content: ""; position: absolute; top: 0; left: 22px; width: 28px; height: 2px;
+            background: rgba(138, 150, 166, 0.35); border-radius: 0 0 2px 2px;
+        }}
+        .sajag-kpi:nth-child(2) {{ animation-delay: 60ms; }}
+        .sajag-kpi:nth-child(3) {{ animation-delay: 120ms; }}
+        .sajag-kpi-value {{
+            font-family: "IBM Plex Mono", monospace;
+            font-size: 2.4rem; font-weight: 600; line-height: 1.05; color: {TEXT};
+            font-variant-numeric: tabular-nums; letter-spacing: -0.01em; white-space: nowrap;
+        }}
+        .sajag-kpi-label {{
+            font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em;
+            color: {MUTED}; margin-top: 8px;
+        }}
+        .sajag-kpi--primary {{
+            background: #17222C;
+            border-color: rgba(76, 195, 217, 0.30);
+        }}
+        .sajag-kpi--primary::before {{ background: {ACCENT}; width: 40px; }}
+        .sajag-kpi--primary .sajag-kpi-label {{ color: rgba(76, 195, 217, 0.85); }}
+        @keyframes sajag-kpi-in {{
+            from {{ opacity: 0; transform: translateY(4px); }}
+            to {{ opacity: 1; transform: none; }}
+        }}
+        @media (prefers-reduced-motion: reduce) {{
+            .sajag-kpi {{ animation: none; }}
+        }}
 
         /* Why-this-borrower "case file" panel */
         .sajag-case-header {{ display:flex; align-items:center; gap:14px; margin-bottom:10px; }}
@@ -195,12 +460,581 @@ def inject_custom_css():
         }}
 
         /* Landing */
-        .sajag-hero-summary {{ font-size: 1.0rem; color: {MUTED}; margin: 14px 0 4px 0; }}
-        .sajag-howstep {{ border-top: 1px solid {DIVIDER}; padding-top: 10px; }}
-        .sajag-howstep-num {{ font-family:"IBM Plex Mono", monospace; color:{ACCENT}; font-weight:600; }}
-        .sajag-howstep-name {{ font-weight:600; letter-spacing:0.03em; margin-left:6px; }}
-        .sajag-howstep p {{ color: {MUTED}; font-size: 0.85rem; margin-top: 6px; line-height:1.4; }}
-        .sajag-footer-note {{ color: {MUTED}; font-size: 0.78rem; margin-top: 24px; }}
+        /* Landing page only */
+        /* Deep navy page background on the landing page; the hero sits on it directly.
+           ":not(:has(topbar))": landing elements linger until the dashboard's first run
+           finishes, so key off the dashboard top bar too to keep the dashboard untouched. */
+        .stApp:has([class*="st-key-sajag_landing_cta"]):not(:has([class*="st-key-sajag_topbar"])),
+        .stApp:has([class*="st-key-sajag_landing_cta"]):not(:has([class*="st-key-sajag_topbar"])) [data-testid="stAppViewContainer"] {{ background: {LANDING_BG}; }}
+        .stApp:has([class*="st-key-sajag_landing_cta"]) .sajag-hero-wrap {{ background: transparent; }}
+        .sajag-hero-summary {{ font-size: clamp(0.74rem, 0.7rem + 0.15vw, 0.8rem); color: {MUTED}; margin: 0; opacity: 0.85; }}
+        .sajag-landing-head {{
+            font-size: clamp(0.66rem, 0.63rem + 0.12vw, 0.72rem); font-weight: 600; text-transform: uppercase;
+            letter-spacing: 0.1em; color: {LANDING_TEXT}; margin: 56px 0 14px 0;
+        }}
+        /* Funnel -> How it works: hairline divider; same total spacing (16 + 40 = 56px) */
+        .sajag-landing-head--divided {{ margin-top: 16px; padding-top: 40px; border-top: 1px solid {LANDING_BORDER}; }}
+        /* "How the list narrows" funnel (landing). ~78% of the content width, centred;
+           label | bar track | mirror spacer keeps the bars on the true centre line.
+           Stage height follows width (~48px at the normal 1240px content width). */
+        .sajag-funnel {{
+            --fh: clamp(38px, 2.5vw, 58px); --side: clamp(96px, 11%, 136px);
+            width: 78%; margin: 4px auto 0 auto;
+            cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 18 18'%3E%3Ccircle cx='9' cy='9' r='5.5' fill='%230B1219' fill-opacity='.18' stroke='%23C5D0DA' stroke-opacity='.7' stroke-width='1'/%3E%3C/svg%3E") 9 9, auto;
+        }}
+        .sajag-fstage, .sajag-fconn {{ display: grid; grid-template-columns: var(--side) 1fr var(--side); align-items: center; }}
+        .sajag-flabel {{ display: flex; align-items: baseline; gap: 10px; font-family: "IBM Plex Mono", monospace; white-space: nowrap; }}
+        .sajag-fidx {{ font-size: 0.62rem; color: {LANDING_MUTED}; opacity: 0.7; letter-spacing: 0.04em; }}
+        .sajag-ftime {{ font-size: clamp(0.72rem, 0.68rem + 0.15vw, 0.8rem); color: {LANDING_TEXT}; letter-spacing: 0.02em; }}
+        .sajag-ftrack {{ position: relative; height: var(--fh); display: flex; justify-content: center; }}
+        /* faint guide tying the label to its stage */
+        .sajag-ftrack::before {{
+            content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 1px; background: rgba(38, 53, 65, 0.45);
+        }}
+        .sajag-fbar {{
+            position: relative; width: var(--w); height: 100%; box-sizing: border-box; border-radius: 2px;
+            background: linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0) 55%), var(--c);
+            border: 1px solid rgba(255,255,255,0.05);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            transform-origin: 50% 50%; transition: filter 180ms ease;
+        }}
+        .sajag-fnum {{
+            font-family: "IBM Plex Mono", monospace; font-weight: 600; color: #FFFFFF; line-height: 1.05;
+            font-size: clamp(0.92rem, 0.8rem + 0.45vw, 1.2rem); font-variant-numeric: tabular-nums;
+        }}
+        .sajag-fprec {{
+            margin-top: 3px; font-size: clamp(0.54rem, 0.52rem + 0.1vw, 0.6rem); letter-spacing: 0.08em;
+            text-transform: uppercase; color: rgba(255,255,255,0.78); transition: color 180ms ease;
+        }}
+        /* connector: a thin trapezoid narrowing from one stage's width to the next */
+        .sajag-fconn > div:nth-child(2) {{ height: 10px; background: var(--c); opacity: 0.16; clip-path: var(--clip); }}
+        /* hover: hovered stage a touch brighter, the rest slightly dimmer; no size change */
+        .sajag-fstage, .sajag-fconn {{ transition: opacity 180ms ease; }}
+        .sajag-funnel:has(.sajag-fstage:hover) .sajag-fstage:not(:hover),
+        .sajag-funnel:has(.sajag-fstage:hover) .sajag-fconn {{ opacity: 0.8; }}
+        .sajag-fstage:hover .sajag-fbar {{ filter: brightness(1.08); }}
+        .sajag-fstage:hover .sajag-fprec {{ color: #FFFFFF; }}
+        /* entrance (JS adds .is-armed, then .is-in when the funnel scrolls into view) */
+        .sajag-funnel.is-armed .sajag-fstage, .sajag-funnel.is-armed .sajag-fconn {{ opacity: 0; }}
+        .sajag-funnel.is-in .sajag-fstage {{ animation: sajag-fstage-in 0.5s ease-out calc(var(--i) * 110ms) backwards; }}
+        .sajag-funnel.is-in .sajag-fbar {{ animation: sajag-fbar-in 0.55s cubic-bezier(.2,.7,.3,1) calc(var(--i) * 110ms) backwards; }}
+        .sajag-funnel.is-in .sajag-fconn {{ animation: sajag-fstage-in 0.4s ease-out calc(var(--i) * 110ms + 160ms) backwards; }}
+        @keyframes sajag-fstage-in {{ from {{ opacity: 0; }} }}
+        @keyframes sajag-fbar-in {{ from {{ transform: scaleX(0.9); }} }}
+        @media (max-width: 640px) {{ .sajag-funnel {{ width: 100%; }} }}
+        .sajag-howstep {{
+            border-top: 1px solid {LANDING_BORDER}; padding: 14px 16px 12px 16px;
+            background: rgba(17, 27, 36, 0.55);  /* {LANDING_SURFACE}, faint */
+        }}
+        /* Equal-height blocks: stretch the four columns and let each block fill its column */
+        [data-testid="stHorizontalBlock"]:has(.sajag-howstep) {{ align-items: stretch !important; }}
+        [data-testid="stColumn"]:has(.sajag-howstep) > [data-testid="stVerticalBlock"] {{ height: 100%; }}
+        [data-testid="stColumn"]:has(.sajag-howstep) [data-testid="stElementContainer"]:has(.sajag-howstep) {{ flex: 1 1 auto; display: flex; flex-direction: column; }}
+        [data-testid="stColumn"]:has(.sajag-howstep) [data-testid="stMarkdown"]:has(.sajag-howstep),
+        [data-testid="stColumn"]:has(.sajag-howstep) [data-testid="stMarkdown"]:has(.sajag-howstep) > div,
+        [data-testid="stColumn"]:has(.sajag-howstep) [data-testid="stMarkdownContainer"]:has(.sajag-howstep) {{
+            flex: 1 1 auto; display: flex; flex-direction: column; align-items: stretch;
+        }}
+        .sajag-howstep {{ flex: 1 1 auto; box-sizing: border-box; }}
+        .sajag-howstep-num, .sajag-howstep-name {{ font-size: clamp(0.8rem, 0.76rem + 0.15vw, 0.88rem); }}
+        .sajag-howstep-num {{ font-family:"IBM Plex Mono", monospace; color:{LANDING_CYAN}; font-weight:600; }}
+        .sajag-howstep-name {{ font-weight:600; letter-spacing:0.03em; margin-left:6px; color:{LANDING_TEXT}; }}
+        .sajag-howstep p {{ color: {LANDING_MUTED}; font-size: clamp(0.72rem, 0.69rem + 0.12vw, 0.78rem); margin-top: 6px; margin-bottom: 0; line-height:1.5; }}
+        [class*="st-key-sajag_landing_cta"] {{
+            margin-top: 48px; padding-top: 32px; border-top: 1px solid {DIVIDER}; gap: 0;
+        }}
+        .stApp:has([class*="st-key-sajag_landing_cta"]) .st-key-landing_cta button {{
+            background: #E8E4DC !important;
+            color: #0B1117 !important;
+            border: 1px solid rgba(11, 17, 23, 0.12) !important;
+            box-shadow: none !important;
+            padding: 9px 26px;
+            font-weight: 600;
+            transition: background-color 150ms ease;
+        }}
+        .stApp:has([class*="st-key-sajag_landing_cta"]) .st-key-landing_cta button:hover {{
+            background: #F4F1EA !important;
+            color: #0B1117 !important;
+            border-color: rgba(11, 17, 23, 0.12) !important;
+            box-shadow: none !important;
+        }}
+        .stApp:has([class*="st-key-sajag_landing_cta"]) .st-key-landing_cta button p {{
+            color: #0B1117 !important;
+        }}
+        .st-key-landing_cta button p {{ font-size: clamp(0.84rem, 0.8rem + 0.15vw, 0.92rem); }}
+        .sajag-footer-note {{ color: {MUTED}; font-size: clamp(0.66rem, 0.64rem + 0.1vw, 0.7rem); margin-top: 12px; opacity: 0.8; }}
+
+        .stApp:has([class*="st-key-sajag_topbar"]) div.block-container {{
+            padding-top: 0.3rem;
+            padding-bottom: 1.5rem;
+        }}
+        .stApp:has([class*="st-key-sajag_topbar"]) [class*="st-key-sajag_topbar"] {{
+            background-image: none;
+            padding-top: 2px;
+            gap: 10px;
+        }}
+        .stApp:has([class*="st-key-sajag_topbar"]) [class*="st-key-sajag_header"] {{
+            padding-top: 6px;
+        }}
+        .stApp:has([class*="st-key-sajag_topbar"]) .st-key-brand_home button p {{
+            font-size: 1.65rem;
+            letter-spacing: 0.18em;
+        }}
+        .stApp:has([class*="st-key-sajag_topbar"]) .sajag-event {{
+            font-size: 0.78rem;
+        }}
+        .stApp:has([class*="st-key-sajag_topbar"]) .sajag-status {{
+            padding: 5px 18px;
+            background: transparent;
+            border: 0;
+            border-radius: 0;
+        }}
+        .stApp:has([class*="st-key-sajag_topbar"]) [class*="st-key-sajag_header"] .sajag-countdown {{
+            font-size: 1.55rem;
+        }}
+        .stApp:has([class*="st-key-sajag_topbar"]) .sajag-status-sub {{
+            margin-top: 4px;
+            font-size: 0.6rem;
+        }}
+        .stApp:has([class*="st-key-sajag_topbar"]) [class*="st-key-sajag_row2"] {{
+            padding: 2px 0 8px;
+        }}
+        .stApp:has([class*="st-key-sajag_topbar"]) [class*="st-key-sajag_row2"] [data-testid="stHorizontalBlock"]:has([class*="st-key-sajag_timeline"]) {{
+            grid-template-columns: minmax(320px, 0.9fr) minmax(0, 2.4fr);
+            column-gap: clamp(14px, 2vw, 30px);
+        }}
+        .stApp:has([class*="st-key-sajag_topbar"]) [class*="st-key-sajag_topbar"] div[role="radiogroup"] {{
+            flex-direction: row;
+            flex-wrap: nowrap;
+            width: max-content;
+            max-width: 100%;
+            gap: 2px;
+            padding: 2px;
+            background: transparent;
+            border: 0;
+        }}
+        .stApp:has([class*="st-key-sajag_topbar"]) [class*="st-key-sajag_topbar"] div[role="radiogroup"] label {{
+            min-height: 28px;
+            padding: 0 7px !important;
+            white-space: nowrap;
+        }}
+        .stApp:has([class*="st-key-sajag_topbar"]) [class*="st-key-sajag_topbar"] div[role="radiogroup"] label p {{
+            font-size: 0.62rem;
+        }}
+        .stApp:has([class*="st-key-sajag_topbar"]) [class*="st-key-sajag_timeline"] {{
+            margin-top: 0;
+        }}
+        .stApp:has([class*="st-key-sajag_topbar"]) [class*="st-key-sajag_timeline"] [data-testid="stButton"] button {{
+            padding-top: 18px !important;
+            padding-bottom: 3px !important;
+        }}
+        .stApp:has([class*="st-key-sajag_topbar"]) [class*="st-key-sajag_timeline"] .st-key-tl_0 [data-testid="stButton"] button p {{
+            font-size: 0.62rem;
+            letter-spacing: 0.03em;
+        }}
+        .stApp:has([class*="st-key-sajag_topbar"]) [class*="st-key-sajag_step_nav"] {{
+            padding-bottom: 4px;
+            margin-bottom: 7px;
+        }}
+        .stApp:has([class*="st-key-sajag_topbar"]) [class*="st-key-sajag_step_nav"] [data-testid="stHorizontalBlock"] {{
+            display: grid !important;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            align-items: stretch;
+            gap: clamp(8px, 1vw, 16px);
+        }}
+        .stApp:has([class*="st-key-sajag_topbar"]) [class*="st-key-sajag_step_nav"] [data-testid="stColumn"] {{
+            width: 100% !important;
+            min-width: 0 !important;
+            flex: none !important;
+        }}
+        .stApp:has([class*="st-key-sajag_topbar"]) [class*="st-key-sajag_step_nav"] [data-testid="stButton"] button {{
+            min-height: 0;
+            padding: 3px 2px 6px !important;
+            font-size: 0.76rem;
+        }}
+        .stApp:has([class*="st-key-sajag_topbar"]) [class*="st-key-sajag_controls"] {{
+            margin-bottom: 4px;
+        }}
+        .stApp:has([class*="st-key-sajag_topbar"]) [class*="st-key-sajag_controls"] [data-testid="stExpander"] {{
+            border: 0;
+            background: transparent;
+        }}
+        .stApp:has([class*="st-key-sajag_topbar"]) [class*="st-key-sajag_controls"] [data-testid="stExpander"] summary {{
+            padding: 5px 0;
+            font-size: 0.78rem;
+        }}
+        .stApp:has([class*="st-key-sajag_topbar"]) [class*="st-key-sajag_controls"] [data-testid="stButton"] button {{
+            padding: 5px 14px;
+            border-radius: 4px;
+            font-size: 0.78rem;
+        }}
+        .stApp:has([class*="st-key-sajag_topbar"]) .sajag-kpi-row {{
+            gap: 0;
+            margin: 4px 0 16px;
+            border-top: 1px solid rgba(138, 150, 166, 0.14);
+            border-bottom: 1px solid rgba(138, 150, 166, 0.14);
+        }}
+        .stApp:has([class*="st-key-sajag_topbar"]) .sajag-kpi {{
+            min-width: 0;
+            padding: 12px 18px 11px;
+            background: transparent;
+            border: 0;
+            border-radius: 0;
+            box-shadow: none;
+            animation: none;
+        }}
+        .stApp:has([class*="st-key-sajag_topbar"]) .sajag-kpi + .sajag-kpi {{
+            border-left: 1px solid rgba(138, 150, 166, 0.14);
+        }}
+        .stApp:has([class*="st-key-sajag_topbar"]) .sajag-kpi::before {{
+            display: none;
+        }}
+        .stApp:has([class*="st-key-sajag_topbar"]) .sajag-kpi-value {{
+            font-size: clamp(1.65rem, 2vw, 2rem);
+            line-height: 1.1;
+        }}
+        .stApp:has([class*="st-key-sajag_topbar"]) .sajag-kpi-label {{
+            margin-top: 4px;
+            font-size: 0.64rem;
+            letter-spacing: 0.08em;
+        }}
+        .stApp:has([class*="st-key-sajag_topbar"]) .sajag-kpi--primary .sajag-kpi-value {{
+            color: {ACCENT};
+        }}
+        .stApp:has([class*="st-key-sajag_topbar"]) [class*="st-key-sajag_risk_panel"] {{
+            padding: 4px 0 0;
+            margin-bottom: 16px;
+            border: 0;
+            border-radius: 0;
+        }}
+        .stApp:has([class*="st-key-sajag_topbar"]) .sajag-panel-head {{
+            min-height: 24px;
+            margin-bottom: 2px;
+            padding-bottom: 7px;
+            border-bottom: 1px solid rgba(138, 150, 166, 0.16);
+        }}
+        .stApp:has([class*="st-key-sajag_topbar"]) .sajag-section-label {{
+            margin-top: 8px;
+            font-size: 0.68rem;
+            letter-spacing: 0.1em;
+        }}
+        .sajag-actions-scroll {{
+            width: 100%;
+            overflow-x: auto;
+        }}
+        .sajag-actions-table {{
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+            font-size: 0.86rem;
+            background: #10171E;
+            border: 1px solid #26323D;
+        }}
+        .sajag-actions-table th {{
+            padding: 8px 12px;
+            color: {MUTED};
+            font-size: 0.62rem;
+            font-weight: 500;
+            letter-spacing: 0.09em;
+            text-align: left;
+            text-transform: uppercase;
+            border-bottom: 1px solid #26323D;
+        }}
+        .sajag-actions-table td {{
+            padding: 11px 12px;
+            color: {TEXT};
+            line-height: 1.45;
+            vertical-align: middle;
+            border-bottom: 1px solid #26323D;
+        }}
+        .sajag-actions-table tbody tr:last-child td {{ border-bottom: 0; }}
+        .sajag-actions-table th:first-child, .sajag-actions-table td:first-child {{ width: 14%; }}
+        .sajag-actions-table th:nth-child(2), .sajag-actions-table td:nth-child(2) {{ width: 13%; }}
+        .sajag-actions-table th:nth-child(2) {{ white-space: nowrap; }}
+        .sajag-actions-table th:nth-child(3), .sajag-actions-table td:nth-child(3) {{ width: 51%; }}
+        .sajag-actions-table th:last-child, .sajag-actions-table td:last-child {{
+            width: 22%;
+            text-align: right;
+            white-space: nowrap;
+        }}
+        .sajag-action-tier {{
+            display: inline-block;
+            padding-left: 9px;
+            border-left: 2px solid {MUTED};
+            font-weight: 600;
+        }}
+        .sajag-actions-table tbody tr:has(.sajag-action-tier--high) {{ background: #4A252B; }}
+        .sajag-actions-table tbody tr:has(.sajag-action-tier--medium) {{ background: #403522; }}
+        .sajag-actions-table tbody tr:has(.sajag-action-tier--low) {{ background: #202B38; }}
+        .sajag-actions-table tbody tr:has(.sajag-action-tier--not-exposed) {{ background: #171F28; }}
+        .sajag-action-tier--high {{ color: #F2B8B8; border-color: #C85A61; }}
+        .sajag-action-tier--medium {{ color: #E5C98A; border-color: #C49A45; }}
+        .sajag-action-tier--low {{ color: #9FB1C4; border-color: #617A92; }}
+        .sajag-action-tier--not-exposed {{ color: #7F8B98; border-color: #4A5663; }}
+        .sajag-actions-count, .sajag-actions-amount {{
+            font-family: "IBM Plex Mono", monospace;
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+        }}
+        .sajag-actions-amount {{ color: #B6C0CB; }}
+        .stApp:has([class*="st-key-sajag_topbar"]) .sajag-section-head {{
+            margin-bottom: 3px;
+            padding-bottom: 7px;
+        }}
+        @media (max-width: 900px) {{
+            .stApp:has([class*="st-key-sajag_topbar"]) [class*="st-key-sajag_row2"] [data-testid="stHorizontalBlock"]:has([class*="st-key-sajag_timeline"]) {{
+                grid-template-columns: minmax(300px, 0.9fr) minmax(0, 2fr);
+                column-gap: 8px;
+            }}
+            .stApp:has([class*="st-key-sajag_topbar"]) [class*="st-key-sajag_step_nav"] [data-testid="stHorizontalBlock"] {{
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+                gap: 5px;
+            }}
+        }}
+        @media (max-width: 700px) {{
+            .stApp:has([class*="st-key-sajag_topbar"]) [class*="st-key-sajag_row2"] [data-testid="stHorizontalBlock"]:has([class*="st-key-sajag_timeline"]) {{
+                grid-template-columns: minmax(0, 1fr);
+                row-gap: 4px;
+            }}
+            .stApp:has([class*="st-key-sajag_topbar"]) [class*="st-key-sajag_topbar"] div[role="radiogroup"] {{
+                justify-content: flex-start;
+                width: 100%;
+            }}
+            .stApp:has([class*="st-key-sajag_topbar"]) .sajag-kpi-row {{
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }}
+            .stApp:has([class*="st-key-sajag_topbar"]) .sajag-kpi {{
+                padding: 10px 8px;
+            }}
+            .stApp:has([class*="st-key-sajag_topbar"]) .sajag-kpi-value {{
+                font-size: clamp(1.15rem, 5vw, 1.55rem);
+            }}
+            .sajag-actions-table {{ min-width: 720px; }}
+        }}
+        [class*="st-key-sajag_act_page"] {{
+            --act-line: #26323D;
+            --act-muted: #8A96A6;
+            --act-text: #E6EAF0;
+            --act-surface: #10171E;
+        }}
+        [class*="st-key-sajag_act_page"] h1,
+        [class*="st-key-sajag_act_page"] h2,
+        [class*="st-key-sajag_act_page"] h3,
+        [class*="st-key-sajag_act_page"] h4 {{
+            letter-spacing: -0.02em;
+        }}
+        [class*="st-key-sajag_act_page"] .sajag-act-intro {{
+            color: #9AA7B5;
+            margin: -8px 0 14px;
+            font-size: 0.92rem;
+        }}
+        [class*="st-key-sajag_act_page"] .sajag-act-eyebrow {{
+            color: #8A96A6;
+            font-size: 0.65rem;
+            letter-spacing: 0.11em;
+            text-transform: uppercase;
+            margin: 0 0 8px;
+        }}
+        [class*="st-key-sajag_act_page"] .sajag-act-summary {{
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+            align-items: center;
+            gap: 0;
+            margin: 4px 0 24px;
+            padding: 14px 0;
+            border-top: 1px solid var(--act-line);
+            border-bottom: 1px solid var(--act-line);
+        }}
+        [class*="st-key-sajag_act_page"] .sajag-act-stat {{
+            min-width: 0;
+            padding: 0 18px;
+            border-right: 1px solid var(--act-line);
+        }}
+        [class*="st-key-sajag_act_page"] .sajag-act-stat:first-child {{ padding-left: 0; }}
+        [class*="st-key-sajag_act_page"] .sajag-act-stat-value {{
+            color: var(--act-text);
+            font: 600 clamp(1.45rem, 2vw, 1.9rem)/1.15 "IBM Plex Mono", monospace;
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+        }}
+        [class*="st-key-sajag_act_page"] .sajag-act-stat--high .sajag-act-stat-value {{ color: #E2A0A2; }}
+        [class*="st-key-sajag_act_page"] .sajag-act-stat-label {{
+            color: var(--act-muted);
+            font-size: 0.64rem;
+            letter-spacing: 0.09em;
+            margin-top: 4px;
+            text-transform: uppercase;
+        }}
+        [class*="st-key-sajag_act_page"] .sajag-act-jump {{
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            margin-left: 20px;
+            padding: 9px 13px;
+            color: #0B1117 !important;
+            background: #E8E4DC;
+            text-decoration: none !important;
+            font-size: 0.82rem;
+            font-weight: 600;
+            white-space: nowrap;
+            transition: background-color 140ms ease;
+        }}
+        [class*="st-key-sajag_act_page"] .sajag-act-jump:hover {{
+            color: #0B1117 !important;
+            background: #F4F1EA;
+        }}
+        [class*="st-key-sajag_act_page"] .sajag-act-section {{
+            margin: 22px 0 9px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--act-line);
+            color: var(--act-text);
+            font-size: 0.72rem;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }}
+        [class*="st-key-sajag_act_page"] .sajag-act-branch-scroll {{
+            max-height: 360px;
+            overflow: auto;
+            border-top: 1px solid var(--act-line);
+            border-bottom: 1px solid var(--act-line);
+        }}
+        [class*="st-key-sajag_act_page"] .sajag-act-branch-table {{
+            width: 100%;
+            min-width: 610px;
+            border-collapse: collapse;
+            table-layout: fixed;
+            background: var(--act-surface);
+            font-size: 0.84rem;
+        }}
+        [class*="st-key-sajag_act_page"] .sajag-act-branch-table th {{
+            position: sticky;
+            top: 0;
+            z-index: 1;
+            padding: 9px 12px;
+            color: #98A5B3;
+            background: #111922;
+            border-bottom: 1px solid var(--act-line);
+            font-size: 0.66rem;
+            font-weight: 500;
+            letter-spacing: 0.08em;
+            text-align: left;
+            text-transform: uppercase;
+        }}
+        [class*="st-key-sajag_act_page"] .sajag-act-branch-table td {{
+            padding: 8px 12px;
+            color: #D8DEE5;
+            border-bottom: 1px solid rgba(138, 150, 166, 0.1);
+            line-height: 1.35;
+        }}
+        [class*="st-key-sajag_act_page"] .sajag-act-branch-table tbody tr:last-child td {{ border-bottom: 0; }}
+        [class*="st-key-sajag_act_page"] .sajag-act-branch-table tbody tr:hover {{ background: #18222C; }}
+        [class*="st-key-sajag_act_page"] .sajag-act-branch-id {{
+            width: 12%;
+            color: #D9E0E7 !important;
+            font-family: "IBM Plex Mono", monospace;
+            font-size: 0.78rem;
+        }}
+        [class*="st-key-sajag_act_page"] .sajag-act-branch-table th:nth-child(2),
+        [class*="st-key-sajag_act_page"] .sajag-act-branch-table td:nth-child(2) {{ width: 34%; }}
+        [class*="st-key-sajag_act_page"] .sajag-act-branch-table th:nth-child(3),
+        [class*="st-key-sajag_act_page"] .sajag-act-branch-table td:nth-child(3) {{ width: 12%; }}
+        [class*="st-key-sajag_act_page"] .sajag-act-branch-table th:nth-child(4),
+        [class*="st-key-sajag_act_page"] .sajag-act-branch-table td:nth-child(4) {{ width: 15%; }}
+        [class*="st-key-sajag_act_page"] .sajag-act-branch-table th:nth-child(5),
+        [class*="st-key-sajag_act_page"] .sajag-act-branch-table td:nth-child(5) {{ width: 20%; }}
+        [class*="st-key-sajag_act_page"] .sajag-act-number {{
+            text-align: right !important;
+            font-family: "IBM Plex Mono", monospace;
+            font-size: 0.8rem;
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+        }}
+        [class*="st-key-sajag_act_page"] .sajag-act-high-count {{ color: #E2A0A2 !important; }}
+        [class*="st-key-sajag_act_page"] .sajag-act-currency {{ color: #C5CED7; }}
+        [class*="st-key-sajag_act_page"] .sajag-act-branch-meta {{
+            color: var(--act-muted);
+            font-size: 0.78rem;
+            margin: -3px 0 15px;
+        }}
+        [class*="st-key-sajag_act_page"] .sajag-act-list {{
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }}
+        [class*="st-key-sajag_act_page"] .sajag-act-list li {{
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 14px;
+            padding: 8px 0;
+            color: #D5DCE3;
+            border-bottom: 1px solid rgba(138, 150, 166, 0.1);
+            font-size: 0.88rem;
+            line-height: 1.4;
+        }}
+        [class*="st-key-sajag_act_page"] .sajag-act-list li:last-child {{ border-bottom: 0; }}
+        [class*="st-key-sajag_act_page"] .sajag-act-list-count {{
+            color: #AEB9C4;
+            font: 500 0.78rem "IBM Plex Mono", monospace;
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+        }}
+        [class*="st-key-sajag_act_page"] .sajag-act-recommendation {{
+            margin-top: 6px;
+            padding: 2px 0 2px 14px;
+            border-left: 2px solid #C85A61;
+        }}
+        [class*="st-key-sajag_act_page"] .sajag-act-recommendation li {{
+            padding: 5px 0;
+            color: #E2E5E9;
+            font-size: 0.88rem;
+        }}
+        [class*="st-key-sajag_act_page"] .sajag-act-briefing {{
+            margin: 3px 0 10px;
+            color: #CBD3DC;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }}
+        [class*="st-key-sajag_act_page"] [data-testid="stDataFrame"] {{
+            border: 1px solid var(--act-line);
+            border-radius: 2px;
+            overflow: hidden;
+        }}
+        [class*="st-key-sajag_act_page"] [data-testid="stDataFrame"] [role="columnheader"] {{
+            color: #98A5B3;
+            font-size: 0.7rem;
+            letter-spacing: 0.04em;
+        }}
+        [class*="st-key-sajag_act_page"] [data-testid="stDataFrame"] [role="gridcell"] {{
+            border-bottom-color: var(--act-line);
+        }}
+        [class*="st-key-sajag_act_page"] [data-testid="stSelectbox"] label,
+        [class*="st-key-sajag_act_page"] [data-testid="stTextInput"] label {{
+            color: var(--act-muted);
+            font-size: 0.72rem;
+        }}
+        [class*="st-key-sajag_act_page"] [data-testid="stExpander"] {{
+            border: 1px solid var(--act-line);
+            border-radius: 2px;
+            background: transparent;
+        }}
+        @media (max-width: 720px) {{
+            [class*="st-key-sajag_act_page"] .sajag-act-summary {{
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                row-gap: 14px;
+            }}
+            [class*="st-key-sajag_act_page"] .sajag-act-stat {{
+                padding: 0 9px;
+            }}
+            [class*="st-key-sajag_act_page"] .sajag-act-stat:first-child {{ padding-left: 0; }}
+            [class*="st-key-sajag_act_page"] .sajag-act-stat:nth-child(3) {{ border-right: 0; }}
+            [class*="st-key-sajag_act_page"] .sajag-act-jump {{
+                grid-column: 1 / -1;
+                justify-self: start;
+                margin: 0;
+            }}
+        }}
         </style>
         """,
         unsafe_allow_html=True,
@@ -331,14 +1165,39 @@ def apply_filters(df):
     return df[mask]
 
 
-def _style_tier_column(display_df):
+def _style_tier_column(display_df, soft=False):
+    """soft=True: tier-coloured text on a faint tint of the same colour,
+    instead of a solid fill."""
     label_to_tier = {v: k for k, v in TIER_LABELS.items()}
 
     def _cell_style(value):
         color = TIER_COLORS.get(label_to_tier.get(value))
-        return f"background-color: {color}; color: white; font-weight: 600" if color else ""
+        if not color:
+            return ""
+        if soft:
+            r, g, b = (int(color[i:i + 2], 16) for i in (1, 3, 5))
+            return f"background-color: rgba({r}, {g}, {b}, 0.14); color: {color}; font-weight: 600"
+        return f"background-color: {color}; color: white; font-weight: 600"
 
     return display_df.style.map(_cell_style, subset=["Tier"])
+
+
+def _style_act_tier_column(display_df):
+    tier_styles = {
+        "High": ("#4A252B", "#F2B8B8", "#C85A61"),
+        "Medium": ("#403522", "#E5C98A", "#C49A45"),
+        "Low": ("#202B38", "#9FB1C4", "#617A92"),
+        "Not exposed": ("#171F28", "#7F8B98", "#4A5663"),
+    }
+
+    def _tier_cell_style(value):
+        background, text, accent = tier_styles.get(value, ("#171F28", "#7F8B98", "#4A5663"))
+        return (
+            f"background-color: {background}; color: {text}; "
+            f"border-left: 2px solid {accent}; font-weight: 600"
+        )
+
+    return display_df.style.map(_tier_cell_style, subset=["Tier"])
 
 
 def _approved_outreach_ids():
@@ -585,8 +1444,21 @@ def _district_high_bar_chart(df):
     counts = df[df["tier"] == "high"].groupby("district").size().sort_values(ascending=True)
     if counts.empty:
         return None
-    fig = go.Figure(go.Bar(x=counts.values, y=counts.index, orientation="h", marker_color=TIER_COLORS["high"]))
-    fig.update_layout(_plotly_layout(height=220, xaxis=dict(title=None), yaxis=dict(color=TEXT)))
+    colors = [
+        "#D8787B" if value == counts.max() else "rgba(184, 101, 105, 0.76)"
+        for value in counts.values
+    ]
+    fig = go.Figure(go.Bar(
+        x=counts.values, y=counts.index, orientation="h", marker_color=colors,
+        text=counts.values, textposition="outside", cliponaxis=False,
+        textfont=dict(family="IBM Plex Mono, monospace", color=MUTED, size=11),
+    ))
+    fig.update_layout(_plotly_layout(
+        height=max(210, 31 * len(counts) + 20), bargap=0.56,
+        margin=dict(l=8, r=40, t=4, b=4),
+        xaxis=dict(title=None, showgrid=False, showticklabels=False, zeroline=False),
+        yaxis=dict(color=TEXT, ticksuffix="  ", automargin=True),
+    ))
     return fig
 
 
@@ -605,6 +1477,38 @@ def _next_actions_table(df, config):
             "Recommended action": agg["tier"].map(lambda t: actions_cfg.get(t, "")),
             "₹ Outstanding": agg["outstanding"].map(format_inr_lakh_cr),
         }
+    )
+
+
+def _render_next_actions(df, config):
+    rows = _next_actions_table(df, config).to_dict(orient="records")
+    tier_styles = {
+        "high": "high",
+        "medium": "medium",
+        "low": "low",
+        "not exposed": "not-exposed",
+    }
+    table_rows = []
+    for row in rows:
+        tier = str(row["Tier"])
+        tier_style = tier_styles.get(tier.casefold(), "not-exposed")
+        borrower_count = f"{row['Borrowers']:,}"
+        table_rows.append(
+            "<tr>"
+            f"<td><span class='sajag-action-tier sajag-action-tier--{tier_style}'>{html.escape(tier)}</span></td>"
+            f"<td class='sajag-actions-count'>{html.escape(borrower_count)}</td>"
+            f"<td>{html.escape(str(row['Recommended action']))}</td>"
+            f"<td class='sajag-actions-amount'>{html.escape(str(row['₹ Outstanding']))}</td>"
+            "</tr>"
+        )
+    st.markdown(
+        "<div class='sajag-actions-scroll'>"
+        "<table class='sajag-actions-table'>"
+        "<thead><tr><th>Risk tier</th><th>Borrowers</th><th>Recommended action</th>"
+        "<th>Outstanding</th></tr></thead>"
+        f"<tbody>{''.join(table_rows)}</tbody>"
+        "</table></div>",
+        unsafe_allow_html=True,
     )
 
 
@@ -633,10 +1537,10 @@ def _lead_time_line_chart(summary_table, y_col, y_title, height=260):
     return fig
 
 
-def _precision_funnel_chart(summary_table, scenario="inland", stops=TIMELINE_STOPS):
-    """The "list narrowing" visual: a native Plotly funnel (decreasing-width
-    by construction, no custom animation needed) of High-tier count at each
-    canonical stop, strict precision labeled beside each one."""
+def _precision_funnel_rows(summary_table, scenario="inland", stops=TIMELINE_STOPS):
+    """[(label, high_count, strict_precision_pct)] at each canonical stop -
+    the data behind both funnel renderings (Measure's Plotly chart and the
+    landing page's HTML funnel)."""
     rows = []
     for h in stops:
         row = summary_table[(summary_table["lead_time_h"] == h) & (summary_table["scenario"] == scenario)]
@@ -645,6 +1549,14 @@ def _precision_funnel_chart(summary_table, scenario="inland", stops=TIMELINE_STO
         r = row.iloc[0]
         label = "Landfall" if h == 0 else f"T-{h}h"
         rows.append((label, int(r["high"]), float(r["strict_precision_pct"])))
+    return rows
+
+
+def _precision_funnel_chart(summary_table, scenario="inland", stops=TIMELINE_STOPS):
+    """The "list narrowing" visual: a native Plotly funnel (decreasing-width
+    by construction, no custom animation needed) of High-tier count at each
+    canonical stop, strict precision labeled beside each one."""
+    rows = _precision_funnel_rows(summary_table, scenario, stops)
     if not rows:
         return None
     fig = go.Figure(
@@ -852,6 +1764,27 @@ def _branch_alert_table(df):
     return table
 
 
+def _render_act_branch_table(branch_table):
+    rows = "".join(
+        "<tr>"
+        f"<td class='sajag-act-branch-id'>{html.escape(str(row['Branch']))}</td>"
+        f"<td>{html.escape(str(row['District']))}</td>"
+        f"<td class='sajag-act-number sajag-act-high-count'>{int(row['High']):,}</td>"
+        f"<td class='sajag-act-number'>{int(row['Medium']):,}</td>"
+        f"<td class='sajag-act-number sajag-act-currency'>{html.escape(str(row['₹ Exposed']))}</td>"
+        "</tr>"
+        for _, row in branch_table.iterrows()
+    )
+    st.markdown(
+        "<div class='sajag-act-branch-scroll'>"
+        "<table class='sajag-act-branch-table'>"
+        "<thead><tr><th>Branch</th><th>District</th><th class='sajag-act-number'>High</th>"
+        "<th class='sajag-act-number'>Medium</th><th class='sajag-act-number'>₹ Exposed</th></tr></thead>"
+        f"<tbody>{rows}</tbody></table></div>",
+        unsafe_allow_html=True,
+    )
+
+
 def render_legend():
     st.markdown("**Legend**")
     for tier in TIER_ORDER:
@@ -913,14 +1846,14 @@ def _add_tier_marker(m, lat, lon, tier, radius, tooltip, popup_html=None):
     color = TIER_COLORS.get(tier, TIER_COLORS["not_exposed"])
     if tier == "high":
         folium.CircleMarker(
-            location=[lat, lon], radius=radius * 2.3, color=color, weight=0,
-            fill=True, fill_color=color, fill_opacity=0.16,
+            location=[lat, lon], radius=radius * 1.8, color=color, weight=0,
+            fill=True, fill_color=color, fill_opacity=0.09,
         ).add_to(m)
     popup = folium.Popup(popup_html, max_width=260) if popup_html else None
-    fill_opacity = 0.92 if tier == "high" else (0.85 if tier == "medium" else 0.55)
+    fill_opacity = 0.82 if tier == "high" else (0.76 if tier == "medium" else 0.5)
     folium.CircleMarker(
         location=[lat, lon], radius=radius, color=color, fill=True, fill_color=color,
-        fill_opacity=fill_opacity, weight=1, tooltip=tooltip, popup=popup,
+        fill_opacity=fill_opacity, weight=0.8, tooltip=tooltip, popup=popup,
     ).add_to(m)
 
 
@@ -1128,17 +2061,19 @@ def _render_sense_map(joined_df, lead, scenario, map_key):
         radius = 5 + 11 * (row.outstanding / max_outstanding) ** 0.5
         _add_tier_marker(m, row.lat, row.lon, tier, radius, f"Village {row.village_id}", row.tooltip)
 
-    st_folium(m, height=560, use_container_width=True, returned_objects=[], key=map_key)
+    st_folium(m, height=460, use_container_width=True, returned_objects=[], key=map_key)
 
 
-def _stacked_number(label, value):
-    st.markdown(
-        f"<div style='margin-bottom:16px;'>"
-        f"<div class='sajag-section-label' style='margin:0 0 2px 0;'>{label.upper()}</div>"
-        f"<div class='sajag-mono' style='font-size:1.55rem; font-weight:600; color:{TEXT};'>{value}</div>"
-        f"</div>",
-        unsafe_allow_html=True,
+def _kpi_row(cards):
+    """cards: [(label, value, primary)] rendered as one equal-width row."""
+    cells = "".join(
+        f"<div class='sajag-kpi{' sajag-kpi--primary' if primary else ''}'>"
+        f"<div class='sajag-kpi-value'>{value}</div>"
+        f"<div class='sajag-kpi-label'>{label}</div>"
+        f"</div>"
+        for label, value, primary in cards
     )
+    st.markdown(f"<div class='sajag-kpi-row'>{cells}</div>", unsafe_allow_html=True)
 
 
 def _render_sense_frame(lead, scenario, config, landfall_time):
@@ -1150,33 +2085,43 @@ def _render_sense_frame(lead, scenario, config, landfall_time):
     exposed = joined[joined["tier"] != "not_exposed"]
     high = joined[joined["tier"] == "high"]
 
-    map_col, side_col = st.columns([13, 7])
-    with map_col:
-        _render_sense_map(joined, lead, scenario, map_key=f"sense_map_{lead}_{scenario}")
+    _kpi_row([
+        ("Borrowers exposed", f"{len(exposed):,}", False),
+        ("Flagged for early outreach", f"{len(high):,}", True),
+        ("Outstanding in High tier", format_inr_lakh_cr(high["outstanding"].sum()), False),
+    ])
 
-    with side_col:
-        st.markdown(f"<div class='sajag-countdown' style='font-size:2.1rem;'>T&minus;{lead}h</div>", unsafe_allow_html=True)
-        st.markdown(f"<div style='color:{MUTED}; margin-bottom:18px;'>{html.escape(event_name)} &middot; {date_str}</div>", unsafe_allow_html=True)
+    # Key includes lead: Play redraws this frame once per stop within a single run.
+    with st.container(key=f"sajag_risk_panel_{lead}"):
+        map_col, side_col = st.columns([13, 7], gap="large")
+        with map_col:
+            st.markdown(
+                "<div class='sajag-panel-head'><span class='sajag-section-label'>EXPOSURE MAP</span></div>",
+                unsafe_allow_html=True,
+            )
+            _render_sense_map(joined, lead, scenario, map_key=f"sense_map_{lead}_{scenario}")
 
-        _stacked_number("Borrowers exposed", f"{len(exposed):,}")
-        _stacked_number("Flagged for early outreach", f"{len(high):,}")
-        _stacked_number("₹ outstanding in High tier", format_inr_lakh_cr(high["outstanding"].sum()))
+        with side_col:
+            st.markdown(
+                f"<div class='sajag-panel-head'><span class='sajag-section-label'>WHERE TO ACT FIRST</span>"
+                f"<span class='sajag-panel-context'><span class='sajag-mono'>T&minus;{lead}h</span>"
+                f" &middot; {html.escape(event_name)} &middot; {date_str}</span></div>",
+                unsafe_allow_html=True,
+            )
+            district_fig = _district_high_bar_chart(joined)
+            if district_fig is not None:
+                _plot(district_fig)
+            else:
+                st.caption("No High-tier borrowers at this lead time/scenario.")
 
-        st.markdown("<div class='sajag-section-label'>WHERE TO ACT FIRST</div>", unsafe_allow_html=True)
-        district_fig = _district_high_bar_chart(joined)
-        if district_fig is not None:
-            _plot(district_fig)
-        else:
-            st.caption("No High-tier borrowers at this lead time/scenario.")
-
-    st.markdown("<div class='sajag-section-label'>NEXT ACTIONS</div>", unsafe_allow_html=True)
-    st.dataframe(_style_tier_column(_next_actions_table(joined, config)), hide_index=True, width="stretch")
+    st.markdown("<div class='sajag-section-head'>NEXT ACTIONS</div>", unsafe_allow_html=True)
+    _render_next_actions(joined, config)
 
 
-def render_sense(config):
+def render_sense(config, play_container=st):
     landfall_time = _landfall_time()
     current_lead, current_scenario = current_lead_and_scenario()
-    play_clicked = st.button("▶ Play")
+    play_clicked = play_container.button("▶ Play")
 
     placeholder = st.empty()
 
@@ -1216,99 +2161,220 @@ def _branch_team_sheet_csv(branch_df):
 
 
 def render_field_plan(df, config):
+    with st.container(key="sajag_act_page"):
+        _render_field_plan_content(df, config)
+
+
+def _render_field_plan_content(df, config):
     st.subheader("Field Plan")
+    st.markdown(
+        "<p class='sajag-act-intro'>Prioritized branch actions based on borrower risk and exposure.</p>",
+        unsafe_allow_html=True,
+    )
     if df.empty:
         st.info("No borrowers match the current filters.")
         return
-
-    st.markdown("<div class='sajag-section-label'>BRANCHES RANKED BY HIGH COUNT</div>", unsafe_allow_html=True)
-    st.dataframe(_branch_alert_table(df), hide_index=True, width="stretch")
 
     branch_rank = (
         _branch_agg(df).sort_values(["high_count", "medium_count", "borrowers"], ascending=False).reset_index(drop=True)
     )
     branch_options = branch_rank["branch_id"].tolist()
-    branch_id = st.selectbox("Branch", branch_options, index=0, key="branch_actions_branch")
+    header_col, branch_col = st.columns([1.5, 1], vertical_alignment="bottom")
+    with header_col:
+        st.markdown("<div class='sajag-act-eyebrow'>SELECTED BRANCH</div>", unsafe_allow_html=True)
+    with branch_col:
+        branch_id = st.selectbox("Branch", branch_options, index=0, key="branch_actions_branch")
 
     branch_df = df[df["branch_id"] == branch_id]
     actions_cfg = config["priority"]["actions"]
     facts = build_branch_facts(df, branch_id)
 
-    st.markdown(f"#### {branch_id} · {facts['district']}")
-    tier_agg = (
-        branch_df.groupby("tier")
-        .agg(borrowers=("borrower_id", "count"), outstanding=("outstanding", "sum"))
-        .reindex(TIER_ORDER, fill_value=0)
-        .reset_index()
+    summary_html = (
+        "<div class='sajag-act-summary'>"
+        "<div class='sajag-act-stat sajag-act-stat--high'>"
+        f"<div class='sajag-act-stat-value'>{facts['urgent_count']:,}</div>"
+        "<div class='sajag-act-stat-label'>High priority</div></div>"
+        "<div class='sajag-act-stat'>"
+        f"<div class='sajag-act-stat-value'>{facts['watch_count']:,}</div>"
+        "<div class='sajag-act-stat-label'>Watch</div></div>"
+        "<div class='sajag-act-stat'>"
+        f"<div class='sajag-act-stat-value'>{format_inr_lakh_cr(facts['exposed_outstanding_inr'])}</div>"
+        "<div class='sajag-act-stat-label'>Exposed</div></div>"
+        "<a class='sajag-act-jump' href='#act-urgent-borrowers'>View urgent borrowers &rarr;</a>"
+        "</div>"
     )
-    tier_display = pd.DataFrame(
-        {
-            "Tier": tier_agg["tier"].map(lambda t: TIER_LABELS.get(t, t)),
-            "Borrowers": tier_agg["borrowers"],
-            "₹ Outstanding": tier_agg["outstanding"].map(format_inr_lakh_cr),
-        }
-    )
-    st.dataframe(_style_tier_column(tier_display), hide_index=True, width="stretch")
+    st.markdown(summary_html, unsafe_allow_html=True)
 
+    st.markdown(
+        "<div class='sajag-act-section'>Branch priority list</div>",
+        unsafe_allow_html=True,
+    )
+    branch_table = _branch_alert_table(df)
+    _render_act_branch_table(branch_table)
+
+    st.markdown(
+        f"<div class='sajag-act-section'>Branch intelligence · {html.escape(str(branch_id))} · "
+        f"{html.escape(str(facts['district']))}</div>",
+        unsafe_allow_html=True,
+    )
     detail_col1, detail_col2 = st.columns(2)
     with detail_col1:
-        st.markdown("**Top occupations (High tier)**")
+        st.markdown("<div class='sajag-act-eyebrow'>TOP OCCUPATIONS</div>", unsafe_allow_html=True)
         if facts["top_occupations"]:
-            st.markdown("\n".join(f"- {o['occupation']} ({o['borrower_count']})" for o in facts["top_occupations"]))
+            occupation_rows = "".join(
+                f"<li><span>{html.escape(str(item['occupation']))}</span>"
+                f"<span class='sajag-act-list-count'>{item['borrower_count']:,}</span></li>"
+                for item in facts["top_occupations"]
+            )
+            st.markdown(f"<ul class='sajag-act-list'>{occupation_rows}</ul>", unsafe_allow_html=True)
         else:
             st.caption("No High-tier borrowers at this branch under the current filters.")
     with detail_col2:
-        st.markdown("**Top reasons flagged (High tier)**")
+        st.markdown("<div class='sajag-act-eyebrow'>WHY BORROWERS ARE FLAGGED</div>", unsafe_allow_html=True)
         if facts["top_reasons"]:
-            st.markdown("\n".join(f"- {r['reason']} ({r['borrower_count']})" for r in facts["top_reasons"]))
+            reason_labels = {
+                "High/medium exposure to the cyclone track": "Cyclone exposure",
+                "Already missed EMIs before the event": "Missed EMIs",
+                "Livelihood highly sensitive to the hazard": "Livelihood sensitivity",
+            }
+            reason_rows = "".join(
+                f"<li><span>{html.escape(reason_labels.get(item['reason'], item['reason']))}</span>"
+                f"<span class='sajag-act-list-count'>{item['borrower_count']:,}</span></li>"
+                for item in facts["top_reasons"]
+            )
+            st.markdown(f"<ul class='sajag-act-list'>{reason_rows}</ul>", unsafe_allow_html=True)
         else:
             st.caption("No High-tier borrowers at this branch under the current filters.")
 
+    action_items = "".join(
+        f"<li>{html.escape(action.strip()[:1].upper() + action.strip()[1:])}</li>"
+        for action in actions_cfg.get("high", "").split(" + ")
+        if action.strip()
+    )
+    st.markdown("<div class='sajag-act-section'>Recommended action</div>", unsafe_allow_html=True)
+    st.markdown(f"<ul class='sajag-act-recommendation'>{action_items}</ul>", unsafe_allow_html=True)
+
+    st.markdown("<div class='sajag-act-section'>Field briefing</div>", unsafe_allow_html=True)
+    if facts["top_villages"]:
+        priority_villages = ", ".join(dict.fromkeys(
+            str(village["subdivision"] or village["village_id"]) for village in facts["top_villages"]
+        ))
+        briefing_preview = (
+            f"Prioritize borrower contact in {priority_villages} and verify safety, livelihood "
+            "disruption, and ability to reach the branch."
+        )
+    else:
+        briefing_preview = (
+            "Prioritize contact with high-priority borrowers and verify safety, livelihood "
+            "disruption, and ability to reach the branch."
+        )
     st.markdown(
-        f"**₹ exposed:** {format_inr_lakh_cr(facts['exposed_outstanding_inr'])} &nbsp;&nbsp;&nbsp; "
-        f"**Recommended action (High tier):** {actions_cfg.get('high', '')}",
+        f"<p class='sajag-act-briefing'>{facts['urgent_count']:,} urgent · {facts['watch_count']:,} watch. "
+        f"{html.escape(briefing_preview)}</p>",
         unsafe_allow_html=True,
     )
-
-    st.markdown("#### Field briefing")
-    st.info(template_branch_briefing(facts))
-
-    st.download_button(
-        "Download team sheet (CSV)", data=_branch_team_sheet_csv(branch_df),
-        file_name=f"{branch_id}_team_sheet.csv", mime="text/csv",
-    )
+    download_col, briefing_col = st.columns([1, 3], vertical_alignment="center")
+    with download_col:
+        st.download_button(
+            "Download team sheet",
+            data=_branch_team_sheet_csv(branch_df),
+            file_name=f"{branch_id}_team_sheet.csv",
+            mime="text/csv",
+        )
+    with briefing_col:
+        with st.expander("View full briefing", expanded=False):
+            st.markdown(template_branch_briefing(facts))
 
     urgent_df = branch_df[branch_df["tier"] == "high"].sort_values("priority_score", ascending=False).reset_index(drop=True)
-    st.markdown(f"#### Urgent borrowers ({len(urgent_df)})")
+    st.markdown(
+        f"<div class='sajag-act-section' id='act-urgent-borrowers'>Urgent borrowers · "
+        f"{len(urgent_df):,} requiring attention</div>",
+        unsafe_allow_html=True,
+    )
     if urgent_df.empty:
         st.caption("No urgent (high-priority) borrowers at this branch under the current filters.")
         return
 
+    filter_col1, filter_col2, filter_col3 = st.columns([1.4, 1, 1])
+    with filter_col1:
+        borrower_query = st.text_input(
+            "Search borrowers",
+            placeholder="Borrower ID, village, or occupation",
+            key=f"act_borrower_search_{branch_id}",
+        ).strip()
+    with filter_col2:
+        village_filter = st.selectbox(
+            "Village",
+            ["All"] + sorted(urgent_df["subdivision"].dropna().unique().tolist()),
+            key=f"act_borrower_village_{branch_id}",
+        )
+    with filter_col3:
+        occupation_filter = st.selectbox(
+            "Occupation",
+            ["All"] + sorted(
+                urgent_df["occupation"].map(lambda value: OCCUPATION_LABELS.get(value, value)).dropna().unique().tolist()
+            ),
+            key=f"act_borrower_occupation_{branch_id}",
+        )
+
+    visible_urgent_df = urgent_df
+    if borrower_query:
+        search_fields = (
+            visible_urgent_df["borrower_id"].astype(str)
+            + " "
+            + visible_urgent_df["subdivision"].astype(str)
+            + " "
+            + visible_urgent_df["occupation"].map(lambda value: OCCUPATION_LABELS.get(value, value)).astype(str)
+        )
+        visible_urgent_df = visible_urgent_df[search_fields.str.contains(borrower_query, case=False, regex=False)]
+    if village_filter != "All":
+        visible_urgent_df = visible_urgent_df[visible_urgent_df["subdivision"] == village_filter]
+    if occupation_filter != "All":
+        visible_urgent_df = visible_urgent_df[
+            visible_urgent_df["occupation"].map(lambda value: OCCUPATION_LABELS.get(value, value)) == occupation_filter
+        ]
+    if visible_urgent_df.empty:
+        st.caption("No urgent borrowers match the current search and filters.")
+        return
+
     display = pd.DataFrame(
         {
-            "Tier": urgent_df["tier"].map(lambda t: TIER_LABELS.get(t, t)),
-            "Borrower ID": urgent_df["borrower_id"],
-            "Village": urgent_df["subdivision"],
-            "Occupation": urgent_df["occupation"].map(lambda o: OCCUPATION_LABELS.get(o, o)),
-            "Outstanding": urgent_df["outstanding"].map(format_inr),
+            "Tier": visible_urgent_df["tier"].map(lambda t: TIER_LABELS.get(t, t)),
+            "Borrower ID": visible_urgent_df["borrower_id"],
+            "Village": visible_urgent_df["subdivision"],
+            "Occupation": visible_urgent_df["occupation"].map(lambda o: OCCUPATION_LABELS.get(o, o)),
+            "Outstanding": visible_urgent_df["outstanding"].map(format_inr),
         }
     )
     event = st.dataframe(
-        _style_tier_column(display), hide_index=True, width="stretch",
+        _style_act_tier_column(display),
+        hide_index=True,
+        width="stretch",
+        height=min(560, 42 + 39 * len(display)),
         on_select="rerun", selection_mode="single-row", key=f"branch_actions_table_{branch_id}",
+        column_config={
+            "Borrower ID": st.column_config.TextColumn("Borrower ID", width="small"),
+            "Village": st.column_config.TextColumn("Village"),
+            "Occupation": st.column_config.TextColumn("Occupation"),
+            "Outstanding": st.column_config.TextColumn("Outstanding", alignment="right"),
+        },
     )
 
     selected_rows = event.selection.rows if event is not None else []
     if not selected_rows:
         return
 
-    borrower = urgent_df.iloc[selected_rows[0]]
-    st.markdown(f"#### Outreach message · {borrower['borrower_id']}")
+    borrower = visible_urgent_df.iloc[selected_rows[0]]
+    st.markdown(
+        f"<div class='sajag-act-section'>Outreach message · {html.escape(str(borrower['borrower_id']))}</div>",
+        unsafe_allow_html=True,
+    )
     messages, msg_source = get_borrower_outreach(borrower)
     render_outreach_widget(borrower["borrower_id"], messages, msg_source, location="branch")
 
 
 LANDING_VIEWBOX_W, LANDING_VIEWBOX_H = 800, 500
+LANDING_HERO_STRIP_H = 94  # result-metrics strip under the visualization
 
 
 @st.cache_data
@@ -1368,75 +2434,135 @@ def _landing_geometry():
     return {"coast_path": coast_path, "track": track, "villages": village_list}
 
 
-def _landing_hero_html(geometry, stats):
-    """Self-contained HTML/SVG/CSS/JS hero: track draws in over ~4s with a
-    rotating cyclone glyph, villages fade in and light up in real tier
-    colors, counters count up to the real stats. Respects
-    prefers-reduced-motion (jumps straight to the end state); the end state
-    itself is the same regardless, so it also holds up as a still frame."""
+def _landing_hero_html(geometry, stats, animate=True):
+    """Self-contained HTML/SVG/CSS hero. Entrance sequence (~2.7s, plays once):
+    map fades in and settles from a slight zoom, the track traces itself with
+    the cyclone glyph riding its tip, village dots reveal in staggered groups
+    (high, then medium), then the counters count up (_LANDING_COUNTUP_JS).
+    Every animation runs *from* an offset *to* the element's base style, so
+    with animations off (animate=False, or prefers-reduced-motion) the hero
+    shows the identical final state immediately."""
     coast_path = geometry["coast_path"]
     track_pts = geometry["track"]
     track_path_d = ("M " + " L ".join(f"{p['x']:.1f},{p['y']:.1f}" for p in track_pts)) if track_pts else ""
-    track_len = 3000  # generous overestimate of path length - see the draw-in comment below
+    # Exact polyline length, so the draw-in tip moves in step with the glyph.
+    track_len = sum(
+        float(np.hypot(b["x"] - a["x"], b["y"] - a["y"])) for a, b in zip(track_pts, track_pts[1:])
+    ) + 1
 
+    # Reveal order only (positions/tiers untouched): within each tier, nearest-to-track
+    # first, in groups of 6. (start, max stagger) per tier, in seconds.
+    tier_timing = {"low": (0.5, 0.3), "high": (1.0, 0.45), "medium": (1.4, 0.3)}
+    seen = {t: 0 for t in tier_timing}
+    dot_delays = []
+    for v in geometry["villages"]:  # already sorted by distance to track
+        start, span = tier_timing[v["tier"]]
+        dot_delays.append(start + min((seen[v["tier"]] // 6) * 0.05, span))
+        seen[v["tier"]] += 1
     villages_html = "".join(
         f'<circle class="sajag-vdot" cx="{v["x"]:.1f}" cy="{v["y"]:.1f}" r="3" data-tier="{v["tier"]}" '
-        f'style="animation-delay:{0.6 + min(v["order"], 70) * 0.028:.2f}s"></circle>'
-        for v in geometry["villages"]
+        f'style="animation-delay:{d:.2f}s"></circle>'
+        for v, d in zip(geometry["villages"], dot_delays)
     )
     screened, flagged72, confirmed0 = stats
 
     return f"""
-    <div class="sajag-hero-wrap">
+    <div class="sajag-hero-wrap{'' if animate else ' sajag-hero-static'}">
       <style>
         .sajag-hero-wrap {{
-          position: relative; width: 100%; height: 500px; background: {BG};
+          width: 100%; background: {BG}; container-type: inline-size;
           overflow: hidden; font-family: 'IBM Plex Sans', sans-serif;
+        }}
+        /* Height follows the hero's own width (40%): ~500px at the normal 1240px
+           content width, taller when the layout widens. Type uses cqw (hero width). */
+        .sajag-hero-stage {{
+          position: relative; width: 100%; aspect-ratio: 5 / 2; min-height: 420px; max-height: 860px; overflow: hidden;
         }}
         .sajag-hero-bg {{
           position:absolute; inset:0;
           background-image: repeating-radial-gradient(circle at 85% 18%, rgba(76,195,217,0.05) 0, rgba(76,195,217,0.05) 1px, transparent 1px, transparent 46px);
         }}
-        .sajag-hero-svg {{ position:relative; width:100%; height:100%; display:block; }}
-        .sajag-coast {{ fill:{SURFACE}; stroke:{DIVIDER}; stroke-width:1.2; opacity:0; animation: sajag-fadein 1.1s ease forwards; }}
-        .sajag-cone {{ fill:none; stroke:{ACCENT}; stroke-width:30; stroke-linecap:round; opacity:0; animation: sajag-fadein 1.4s ease 0.9s forwards; stroke-opacity:0.14; }}
+        /* Base styles below ARE the final resting state; each entrance animation
+           runs from an offset to that base (fill-mode: backwards, so once
+           finished it releases entirely and the plain base styles apply), so disabling the
+           animations shows the finished hero immediately. Background rings stay static. */
+        .sajag-hero-svg {{
+          position:relative; width:100%; height:100%; display:block; transform-origin: 50% 50%;
+          animation: sajag-from-transparent 0.7s ease-out backwards, sajag-map-settle 1.5s cubic-bezier(.22,.61,.36,1) 0.2s backwards;
+        }}
+        .sajag-coast {{ fill:{SURFACE}; stroke:{DIVIDER}; stroke-width:1.2; animation: sajag-from-transparent 0.8s ease 0.1s backwards; }}
+        .sajag-cone {{ fill:none; stroke:{ACCENT}; stroke-width:30; stroke-linecap:round; stroke-opacity:0.14; animation: sajag-from-transparent 0.9s ease 0.6s backwards; }}
         .sajag-track {{
           fill:none; stroke:{TEXT}; stroke-width:2.2; stroke-linecap:round;
-          stroke-dasharray: {track_len}; stroke-dashoffset: {track_len};
-          animation: sajag-draw 4s ease-out 0.4s forwards;
+          stroke-dasharray: 3000;  /* resting style, unchanged; the draw-in uses the exact length */
+          animation: sajag-draw 1.5s cubic-bezier(.45,0,.25,1) 0.6s backwards;
         }}
         .sajag-cyclone circle, .sajag-cyclone path {{ vector-effect: non-scaling-stroke; }}
-        .sajag-cyclone {{ opacity:0; animation: sajag-spin 2.6s linear infinite, sajag-fadein 0.3s ease 4.1s forwards; }}
+        .sajag-cyclone {{ animation: sajag-spin 2.6s linear infinite, sajag-from-transparent 0.25s ease 0.6s backwards; }}
         .sajag-vdot {{
-          fill:#3A4653; opacity:0;
-          animation: sajag-dotfade 0.5s ease forwards, sajag-dotcolor 0.6s ease forwards;
+          fill: var(--tc, #3A4653); transform-box: fill-box; transform-origin: center;
+          animation: sajag-dot-in 0.4s cubic-bezier(.2,.7,.3,1) backwards, sajag-dot-color 0.5s ease backwards;
         }}
         .sajag-vdot[data-tier="high"] {{ --tc:{TIER_COLORS['high']}; }}
         .sajag-vdot[data-tier="medium"] {{ --tc:{TIER_COLORS['medium']}; }}
         .sajag-vdot[data-tier="low"] {{ --tc:{TIER_COLORS['low']}; }}
-        @keyframes sajag-fadein {{ to {{ opacity:1; }} }}
-        @keyframes sajag-draw {{ to {{ stroke-dashoffset:0; }} }}
+        .sajag-counter-value {{ animation: sajag-from-transparent 0.3s ease 1.7s backwards; }}
+        @keyframes sajag-from-transparent {{ from {{ opacity:0; }} }}
+        @keyframes sajag-map-settle {{ from {{ transform: scale(1.06); }} to {{ transform: scale(1); }} }}
+        @keyframes sajag-draw {{
+          from {{ stroke-dasharray:{track_len:.1f} {track_len:.1f}; stroke-dashoffset:{track_len:.1f}; }}
+          to {{ stroke-dasharray:{track_len:.1f} {track_len:.1f}; stroke-dashoffset:0; }}
+        }}
         @keyframes sajag-spin {{ from {{ transform:rotate(0deg);}} to {{ transform:rotate(360deg);}} }}
-        @keyframes sajag-dotfade {{ to {{ opacity:1; }} }}
-        @keyframes sajag-dotcolor {{ from {{ fill:#3A4653; }} to {{ fill: var(--tc, #3A4653); }} }}
+        @keyframes sajag-dot-in {{ from {{ opacity:0; transform: scale(0.4); }} to {{ opacity:1; transform: scale(1); }} }}
+        @keyframes sajag-dot-color {{ from {{ fill:#3A4653; }} }}
 
-        .sajag-hero-text {{ position:absolute; top:34px; left:40px; z-index:2; max-width:440px; }}
-        .sajag-hero-word {{ font-family:'IBM Plex Mono', monospace; font-size:2.3rem; font-weight:600; color:{TEXT}; letter-spacing:0.04em; }}
-        .sajag-hero-tag {{ font-size:1.02rem; color:{MUTED}; margin-top:8px; line-height:1.5; }}
-        .sajag-hero-counters {{ position:absolute; bottom:28px; left:40px; z-index:2; display:flex; gap:32px; }}
-        .sajag-counter-value {{ font-family:'IBM Plex Mono', monospace; font-size:1.6rem; font-weight:600; color:{TEXT}; }}
-        .sajag-counter-label {{ font-size:0.68rem; color:{MUTED}; text-transform:uppercase; letter-spacing:0.05em; margin-top:2px; }}
+        .sajag-hero-text {{ position:absolute; top:30px; left:40px; z-index:2; max-width:420px; }}
+        .sajag-hero-word {{ font-family:'IBM Plex Mono', monospace; font-size:clamp(1.6rem, 1.2rem + 1.1cqw, 2rem); font-weight:600; color:{TEXT}; letter-spacing:0.04em; line-height:1.15; }}
+        /* Home link: reloads the landing page; looks identical to the plain wordmark
+           (same hover cue as the dashboard logo). */
+        .sajag-hero-word a.sajag-hero-home,
+        .sajag-hero-word a.sajag-hero-home:visited,
+        .sajag-hero-word a.sajag-hero-home:hover {{ color: inherit !important; text-decoration: none !important; }}
+        .sajag-hero-word a.sajag-hero-home {{ cursor: pointer; transition: opacity 150ms ease; }}
+        .sajag-hero-word a.sajag-hero-home:hover {{ opacity: 0.75; }}
+        .sajag-hero-tag {{ font-size:clamp(0.84rem, 0.78rem + 0.25cqw, 0.92rem); color:{MUTED}; margin-top:6px; line-height:1.45; }}
+        /* Result metrics: one grouped strip directly under the visualization */
+        /* Same 94px strip height as before, so nothing above/below moves; the
+           three KPIs sit in it as quiet surface cells. */
+        .sajag-hero-counters {{
+          height: {LANDING_HERO_STRIP_H}px; box-sizing: border-box; padding: 4px 0 10px 0;
+          display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; align-items: stretch;
+        }}
+        .sajag-kpi-cell {{
+          position: relative; display: flex; flex-direction: column; justify-content: center;
+          padding: 0 24px; background: {LANDING_SURFACE}; border: 1px solid {LANDING_BORDER}; border-radius: 2px;
+        }}
+        /* Restrained accent: a short hairline on each cell's top edge */
+        .sajag-kpi-cell::before {{
+          content: ""; position: absolute; top: -1px; left: 24px; width: 20px; height: 1px;
+          background: rgba(53, 197, 229, 0.45);
+        }}
+        .sajag-kpi-cell--primary {{ border-color: rgba(53, 197, 229, 0.38); }}
+        .sajag-kpi-cell--primary::before {{ width: 36px; height: 2px; top: -1px; background: {LANDING_CYAN}; }}
+        .sajag-kpi-cell--primary .sajag-counter-label {{ color: {LANDING_CYAN}; opacity: 0.9; }}
+        .sajag-counter-value {{
+          font-family:'IBM Plex Mono', monospace; font-size:clamp(1.6rem, 1.25rem + 1cqw, 2.6rem); font-weight:600; color:{LANDING_TEXT};
+          line-height:1.1; font-variant-numeric: tabular-nums;
+        }}
+        .sajag-counter-label {{ font-size:clamp(0.58rem, 0.55rem + 0.12cqw, 0.62rem); color:{LANDING_MUTED}; text-transform:uppercase; letter-spacing:0.06em; margin-top:5px; line-height:1.4; }}
 
+        /* No entrance: reduced motion (no animation at all, as before), or a
+           repeat render this session (final state; the glyph keeps its spin). */
         @media (prefers-reduced-motion: reduce) {{
-          .sajag-coast, .sajag-cone {{ animation:none !important; opacity:1 !important; }}
-          .sajag-track {{ animation:none !important; stroke-dashoffset:0 !important; }}
-          .sajag-cyclone {{ animation:none !important; opacity:1 !important; }}
-          .sajag-vdot {{ animation:none !important; opacity:1 !important; }}
-          .sajag-vdot[data-tier="high"] {{ fill:{TIER_COLORS['high']} !important; }}
-          .sajag-vdot[data-tier="medium"] {{ fill:{TIER_COLORS['medium']} !important; }}
-          .sajag-vdot[data-tier="low"] {{ fill:{TIER_COLORS['low']} !important; }}
+          .sajag-hero-wrap * {{ animation: none !important; }}
+        }}
+        .sajag-hero-static * {{ animation: none !important; }}
+        @media (prefers-reduced-motion: no-preference) {{
+          .sajag-hero-static .sajag-cyclone {{ animation: sajag-spin 2.6s linear infinite !important; }}
         }}
       </style>
+      <div class="sajag-hero-stage">
       <div class="sajag-hero-bg"></div>
       <svg class="sajag-hero-svg" viewBox="0 0 {LANDING_VIEWBOX_W} {LANDING_VIEWBOX_H}" preserveAspectRatio="xMidYMid meet">
         <path class="sajag-coast" d="{coast_path}"></path>
@@ -1446,38 +2572,138 @@ def _landing_hero_html(geometry, stats):
         <g class="sajag-cyclone">
           <circle cx="0" cy="0" r="7" fill="none" stroke="{TEXT}" stroke-width="1.4"></circle>
           <path d="M -7 0 A 7 7 0 0 1 0 -7" fill="none" stroke="{ACCENT}" stroke-width="1.6"></path>
-          <animateMotion dur="4s" begin="0.4s" fill="freeze" path="{track_path_d}"></animateMotion>
+          <animateMotion dur="1.5s" begin="0.6s" fill="freeze" calcMode="spline" keyTimes="0;1" keyPoints="0;1" keySplines=".45 0 .25 1" path="{track_path_d}"></animateMotion>
         </g>
       </svg>
       <div class="sajag-hero-text">
-        <div class="sajag-hero-word">SAJAG</div>
+        <div class="sajag-hero-word"><a class="sajag-hero-home" href="./" target="_self">SAJAG</a></div>
         <div class="sajag-hero-tag">72 hours before a cyclone lands, know which borrowers to reach first &mdash; and why.</div>
       </div>
-      <div class="sajag-hero-counters">
-        <div><div class="sajag-counter-value" data-target="{screened}">0</div><div class="sajag-counter-label">Screened</div></div>
-        <div><div class="sajag-counter-value" data-target="{flagged72}">0</div><div class="sajag-counter-label">Flagged at T&minus;72h</div></div>
-        <div><div class="sajag-counter-value" data-target="{confirmed0}">0</div><div class="sajag-counter-label">Confirmed at landfall</div></div>
       </div>
-      <script>
-        (function() {{
-          var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-          document.querySelectorAll('.sajag-counter-value').forEach(function(el) {{
-            var target = parseInt(el.getAttribute('data-target'), 10) || 0;
-            if (reduce) {{ el.textContent = target.toLocaleString(); return; }}
-            var start = null;
-            var duration = 1100;
-            function step(ts) {{
-              if (!start) start = ts;
-              var progress = Math.min((ts - start) / duration, 1);
-              el.textContent = Math.round(progress * target).toLocaleString();
-              if (progress < 1) requestAnimationFrame(step);
-            }}
-            requestAnimationFrame(step);
-          }});
-        }})();
-      </script>
+      <div class="sajag-hero-counters">
+        <div class="sajag-kpi-cell"><div class="sajag-counter-value" data-target="{screened}">{screened:,}</div><div class="sajag-counter-label">Screened</div></div>
+        <div class="sajag-kpi-cell sajag-kpi-cell--primary"><div class="sajag-counter-value" data-target="{flagged72}">{flagged72:,}</div><div class="sajag-counter-label">Flagged at T&minus;72h</div></div>
+        <div class="sajag-kpi-cell"><div class="sajag-counter-value" data-target="{confirmed0}">{confirmed0:,}</div><div class="sajag-counter-label">Confirmed at landfall</div></div>
+      </div>
     </div>
     """
+
+
+# Count-up for the hero counters (starts at 1.7s, after the dots). They already hold
+# their final values, so if this never runs nothing is wrong; it polls briefly
+# because the hero markdown may land in the DOM just after this script executes.
+_LANDING_COUNTUP_JS = """<script>
+(function () {
+  var tries = 0;
+  (function waitForHero() {
+    var wrap = document.querySelector('.sajag-hero-wrap');
+    if (!wrap) { if (++tries < 40) setTimeout(waitForHero, 50); return; }
+    var still = wrap.classList.contains('sajag-hero-static') ||
+                window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (still) {
+      // The glyph's SMIL motion ignores CSS; jump its timeline to the end state.
+      var svg = wrap.querySelector('svg');
+      if (svg && svg.setCurrentTime) svg.setCurrentTime(60);
+      return;
+    }
+    if (wrap.hasAttribute('data-counted')) return;
+    wrap.setAttribute('data-counted', '1');
+    var els = wrap.querySelectorAll('.sajag-counter-value');
+    els.forEach(function (el) { el.textContent = '0'; });
+    setTimeout(function () {
+      els.forEach(function (el) {
+        var target = parseInt(el.getAttribute('data-target'), 10) || 0;
+        var t0 = null, duration = 1000;
+        function step(ts) {
+          if (t0 === null) t0 = ts;
+          var p = Math.min((ts - t0) / duration, 1);
+          var eased = 1 - Math.pow(1 - p, 3);
+          el.textContent = (p < 1 ? Math.round(eased * target) : target).toLocaleString('en-US');
+          if (p < 1) requestAnimationFrame(step);
+        }
+        requestAnimationFrame(step);
+      });
+    }, 1700);
+  })();
+})();
+</script>"""
+
+
+# Stage colours: one coral family, a subtle step darker per stage.
+LANDING_FUNNEL_COLORS = ["#EF4444", "#E5484D", "#D94A50", "#CF4A50", "#C5484F"]
+
+
+def _landing_funnel_html(rows, animate=True):
+    """Landing "How the list narrows" funnel as plain HTML/CSS: label | bar | spacer
+    per stage, bar width proportional to the High-tier count, thin trapezoid
+    connectors between stages. Values come straight from `rows` and are
+    pre-filled (the count-up only animates towards them)."""
+    max_v = max(v for _, v, _ in rows) or 1
+    widths = [v / max_v * 100 for _, v, _ in rows]
+    colors = [LANDING_FUNNEL_COLORS[min(i, len(LANDING_FUNNEL_COLORS) - 1)] for i in range(len(rows))]
+    parts = []
+    for i, (label, v, prec) in enumerate(rows):
+        shown = "LANDFALL" if label == "Landfall" else label
+        parts.append(
+            f'<div class="sajag-fstage" style="--i:{i}; --w:{widths[i]:.2f}%; --c:{colors[i]};">'
+            f'<div class="sajag-flabel"><span class="sajag-fidx">{i + 1:02d}</span><span class="sajag-ftime">{shown}</span></div>'
+            f'<div class="sajag-ftrack"><div class="sajag-fbar">'
+            f'<span class="sajag-fnum" data-target="{v}">{v:,}</span><span class="sajag-fprec">{prec:.0f}% precision</span>'
+            f'</div></div><div></div></div>'
+        )
+        if i + 1 < len(rows):
+            top, bot = widths[i], widths[i + 1]
+            clip = (f"polygon({50 - top / 2:.2f}% 0, {50 + top / 2:.2f}% 0, "
+                    f"{50 + bot / 2:.2f}% 100%, {50 - bot / 2:.2f}% 100%)")
+            parts.append(
+                f'<div class="sajag-fconn" style="--i:{i}; --c:{colors[i + 1]}; --clip:{clip};">'
+                f'<div></div><div></div><div></div></div>'
+            )
+    summary = "; ".join(f"{label} {v:,} borrowers, {prec:.0f}% precision" for label, v, prec in rows)
+    cls = "sajag-funnel" + ("" if animate else " sajag-funnel--static")
+    return f'<div class="{cls}" role="img" aria-label="High-tier list by lead time: {summary}">{"".join(parts)}</div>'
+
+
+# Funnel entrance: stages fade/expand in order and counts tick up once the funnel
+# scrolls into view. Skipped for reduced motion and repeat renders; numbers are
+# pre-filled, so if this never runs the funnel is simply shown in its final state.
+_LANDING_FUNNEL_JS = """<script>
+(function () {
+  var tries = 0;
+  (function waitForFunnel() {
+    var f = document.querySelector('.sajag-funnel');
+    if (!f) { if (++tries < 60) setTimeout(waitForFunnel, 50); return; }
+    if (f.classList.contains('sajag-funnel--static') || f.hasAttribute('data-armed') ||
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    f.setAttribute('data-armed', '1');
+    f.classList.add('is-armed');
+    function go() {
+      f.classList.remove('is-armed');
+      f.classList.add('is-in');
+      f.querySelectorAll('.sajag-fnum').forEach(function (el, i) {
+        var target = parseInt(el.getAttribute('data-target'), 10) || 0;
+        el.textContent = '0';
+        setTimeout(function () {
+          var t0 = null;
+          function step(ts) {
+            if (t0 === null) t0 = ts;
+            var p = Math.min((ts - t0) / 700, 1);
+            var eased = 1 - Math.pow(1 - p, 3);
+            el.textContent = (p < 1 ? Math.round(eased * target) : target).toLocaleString('en-US');
+            if (p < 1) requestAnimationFrame(step);
+          }
+          requestAnimationFrame(step);
+        }, i * 110);
+      });
+    }
+    if (!('IntersectionObserver' in window)) { go(); return; }
+    var io = new IntersectionObserver(function (entries) {
+      if (entries.some(function (e) { return e.isIntersecting; })) { io.disconnect(); go(); }
+    }, {threshold: 0.25});
+    io.observe(f);
+  })();
+})();
+</script>"""
 
 
 def render_landing(config):
@@ -1488,7 +2714,17 @@ def render_landing(config):
     flagged72 = int((df72["tier"] == "high").sum())
     confirmed0 = int((df0["tier"] == "high").sum())
 
-    components.html(_landing_hero_html(geometry, (screened, flagged72, confirmed0)), height=500, scrolling=False)
+    # Rendered inline (not in an iframe) so its height follows its responsive width
+    # naturally. st.markdown keeps the SVG (st.html strips it); lines are stripped so
+    # markdown doesn't read indented HTML as a code block.
+    # Entrance plays on the first landing render of a session only; later renders
+    # (e.g. back from the dashboard) show the identical final state immediately.
+    animate = not st.session_state.get("landing_intro_played", False)
+    st.session_state["landing_intro_played"] = True
+    hero_html = _landing_hero_html(geometry, (screened, flagged72, confirmed0), animate=animate)
+    with st.container(key="sajag_landing_hero", gap=None):
+        st.markdown(" ".join(line.strip() for line in hero_html.splitlines()), unsafe_allow_html=True)
+        st.html(_LANDING_COUNTUP_JS, unsafe_allow_javascript=True)
 
     st.markdown(
         f"<p class='sajag-hero-summary'>Cyclone Fani replay: {screened:,} borrowers screened &middot; "
@@ -1497,19 +2733,21 @@ def render_landing(config):
     )
 
     summary_table = summarize_countdown(load_countdown())
-    funnel_fig = _precision_funnel_chart(summary_table, scenario="inland")
-    if funnel_fig is not None:
-        st.markdown("<div class='sajag-section-label'>HOW THE LIST NARROWS</div>", unsafe_allow_html=True)
-        _plot(funnel_fig)
+    funnel_rows = _precision_funnel_rows(summary_table, scenario="inland")
+    if funnel_rows:
+        st.markdown("<div class='sajag-landing-head'>HOW THE LIST NARROWS</div>", unsafe_allow_html=True)
+        with st.container(key="sajag_landing_funnel", gap=None):
+            st.markdown(_landing_funnel_html(funnel_rows, animate=animate), unsafe_allow_html=True)
+            st.html(_LANDING_FUNNEL_JS, unsafe_allow_javascript=True)
 
-    st.markdown("<div class='sajag-section-label'>HOW IT WORKS</div>", unsafe_allow_html=True)
+    st.markdown("<div class='sajag-landing-head sajag-landing-head--divided'>HOW IT WORKS</div>", unsafe_allow_html=True)
     steps = [
         ("01", "SENSE", "Hazard track and forecast uncertainty, replayed hour by hour."),
         ("02", "PRIORITIZE", "Explainable borrower risk - exposure, vulnerability, and repayment stress in one score."),
         ("03", "ACT", "Branch-level field plans, ranked by who needs outreach first."),
         ("04", "MEASURE", "Break-even economics for targeted outreach vs. doing nothing."),
     ]
-    cols = st.columns(4)
+    cols = st.columns(4, gap="large")
     for col, (num, name, desc) in zip(cols, steps):
         with col:
             st.markdown(
@@ -1518,23 +2756,23 @@ def render_landing(config):
                 unsafe_allow_html=True,
             )
 
-    st.write("")
-    if st.button("Replay Cyclone Fani →", type="primary", key="landing_cta"):
-        countdown_df = load_countdown()
-        lead_options = sorted(countdown_df["timestep"].unique(), reverse=True)
-        _init_countdown_state(lead_options, list(COUNTDOWN_SCENARIO_LABELS.keys()))
-        st.session_state["countdown_lead"] = 72
-        st.session_state["countdown_scenario_label"] = next(
-            k for k, v in COUNTDOWN_SCENARIO_LABELS.items() if v == "inland"
-        )
-        st.session_state["route"] = "sense"
-        st.rerun()
+    with st.container(key="sajag_landing_cta"):
+        if st.button("Replay Cyclone Fani →", type="primary", key="landing_cta"):
+            countdown_df = load_countdown()
+            lead_options = sorted(countdown_df["timestep"].unique(), reverse=True)
+            _init_countdown_state(lead_options, list(COUNTDOWN_SCENARIO_LABELS.keys()))
+            st.session_state["countdown_lead"] = 72
+            st.session_state["countdown_scenario_label"] = next(
+                k for k, v in COUNTDOWN_SCENARIO_LABELS.items() if v == "inland"
+            )
+            st.session_state["route"] = "sense"
+            st.rerun()
 
-    st.markdown(
-        "<p class='sajag-footer-note'>Recommendations support credit-team review; they do not make credit "
-        "decisions.</p>",
-        unsafe_allow_html=True,
-    )
+        st.markdown(
+            "<p class='sajag-footer-note'>Recommendations support credit-team review; they do not make credit "
+            "decisions.</p>",
+            unsafe_allow_html=True,
+        )
 
 
 def render_topbar(config):
@@ -1548,30 +2786,44 @@ def render_topbar(config):
     event_name = config["event"]["name"]
 
     with st.container(key="sajag_topbar"):
-        top_cols = st.columns([1.1, 2.4, 1.3, 3.4, 1.6])
-        top_cols[0].markdown('<div class="sajag-wordmark">SAJAG</div>', unsafe_allow_html=True)
-        top_cols[1].markdown(
-            f'<div class="sajag-event">{html.escape(event_name)} &middot; {date_str} IST</div>', unsafe_allow_html=True
-        )
-        top_cols[2].markdown(f'<div class="sajag-countdown">T&minus;{current_lead}h</div>', unsafe_allow_html=True)
-        with top_cols[3]:
-            scenario_label = st.radio(
-                "Scenario", list(COUNTDOWN_SCENARIO_LABELS.keys()), horizontal=True,
-                key="countdown_scenario_label", label_visibility="collapsed",
-            )
-        top_cols[4].markdown(
-            '<div class="sajag-demo-label">Demo &middot; synthetic borrower data</div>', unsafe_allow_html=True
-        )
-
-        tl_cols = st.columns(len(TIMELINE_STOPS))
-        for col, hour in zip(tl_cols, TIMELINE_STOPS):
-            label = "LANDFALL" if hour == 0 else f"T−{hour}h"
-            with col:
-                if st.button(
-                    label, key=f"tl_{hour}", type="primary" if hour == current_lead else "secondary", width="stretch"
-                ):
-                    st.session_state["countdown_lead"] = hour
+        # Row 1: brand + event | countdown | empty. CSS turns this into a 1fr-auto-1fr grid so the
+        # countdown sits on the true centre.
+        with st.container(key="sajag_header"):
+            brand_col, stage_col, _ = st.columns(3)
+            with brand_col:
+                if st.button("SAJAG", key="brand_home", help="Back to the SAJAG home page"):
+                    st.session_state["route"] = "landing"
                     st.rerun()
+                st.markdown(
+                    f'<div class="sajag-event">{html.escape(event_name)} &middot; {date_str} IST</div>',
+                    unsafe_allow_html=True,
+                )
+            status_sub = "At landfall" if current_lead == 0 else f"{current_lead} hours before landfall"
+            stage_col.markdown(
+                f'<div class="sajag-status"><div class="sajag-countdown">T&minus;{current_lead}h</div>'
+                f'<div class="sajag-status-sub">{status_sub}</div></div>',
+                unsafe_allow_html=True,
+            )
+
+        # Row 2: vertical scenario control | timeline. CSS turns this into an auto-1fr grid.
+        with st.container(key="sajag_row2"):
+            controls_col, timeline_col = st.columns([1, 4])
+            with controls_col:
+                scenario_label = st.radio(
+                    "Scenario", list(COUNTDOWN_SCENARIO_LABELS.keys()),
+                    key="countdown_scenario_label", label_visibility="collapsed",
+                )
+            with timeline_col, st.container(key="sajag_timeline"):
+                tl_cols = st.columns(len(TIMELINE_STOPS))
+                for col, hour in zip(tl_cols, TIMELINE_STOPS):
+                    label = "LANDFALL" if hour == 0 else f"T−{hour}h"
+                    with col:
+                        if st.button(
+                            label, key=f"tl_{hour}", type="primary" if hour == current_lead else "secondary",
+                            width="stretch",
+                        ):
+                            st.session_state["countdown_lead"] = hour
+                            st.rerun()
 
     return current_lead, COUNTDOWN_SCENARIO_LABELS[scenario_label]
 
@@ -1609,11 +2861,15 @@ def main():
     _render_step_nav()
 
     current_frame = get_current_frame(current_lead, current_scenario)
-    filtered = apply_filters(current_frame)
+    # Filters and (on Sense) Play share one compact row; Play's column stays empty elsewhere.
+    with st.container(key="sajag_controls"):
+        filters_col, play_col = st.columns(2)
+        with filters_col:
+            filtered = apply_filters(current_frame)
 
     route = st.session_state["route"]
     if route == "sense":
-        render_sense(config)
+        render_sense(config, play_container=play_col)
     elif route == "prioritize":
         render_prioritize(filtered, config)
     elif route == "act":
